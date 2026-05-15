@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { canAccessPath } from '../utils/rbac';
 import {
   Home,
   Map,
@@ -55,6 +56,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed, onToggl
   const [isPerimetrosOpen, setIsPerimetrosOpen] = useState(location.pathname.startsWith('/perimetros'));
   const [isTelemetriaOpen, setIsTelemetriaOpen] = useState(location.pathname.startsWith('/telemetria'));
   const [isGerenciaOpen, setIsGerenciaOpen] = useState(location.pathname.startsWith('/gerencia'));
+  const [isMapaOpen, setIsMapaOpen] = useState(location.pathname.startsWith('/mapa'));
 
   const handleLogout = () => {
     logout();
@@ -85,6 +87,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed, onToggl
     setIsGerenciaOpen(!isGerenciaOpen);
   };
 
+  const toggleMapa = () => {
+    setIsMapaOpen(!isMapaOpen);
+  };
+
   // Abrir menu automaticamente quando estiver na rota correspondente
   useEffect(() => {
     setIsCadastroOpen(location.pathname.startsWith('/cadastro'));
@@ -93,6 +99,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed, onToggl
     setIsPerimetrosOpen(location.pathname.startsWith('/perimetros'));
     setIsTelemetriaOpen(location.pathname.startsWith('/telemetria'));
     setIsGerenciaOpen(location.pathname.startsWith('/gerencia'));
+    setIsMapaOpen(location.pathname.startsWith('/mapa'));
   }, [location.pathname]);
 
   const getIcon = (iconName: string, size: number = 20) => {
@@ -181,9 +188,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed, onToggl
     },
     {
       name: 'Mapa',
-      path: '/mapa',
       icon: 'map',
-      protected: true
+      protected: true,
+      submenu: [
+        { name: 'Ao vivo', path: '/mapa', icon: 'map' },
+        { name: 'Histórico / Replay', path: '/mapa/historico', icon: 'history' }
+      ]
     },
     {
       name: 'Cadastro',
@@ -402,9 +412,24 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed, onToggl
     }
   ];
 
-  const filteredMenuItems = isAuthenticated
-    ? menuItems
-    : menuItems.filter(item => !item.protected);
+  const filterByRole = (items: typeof menuItems) => {
+    const role = user?.role;
+    return items
+      .filter((item) => !item.protected || isAuthenticated)
+      .map((item) => {
+        if (!item.submenu) {
+          return item.path && !canAccessPath(item.path, role) ? null : item;
+        }
+        const submenu = item.submenu.filter(
+          (sub) => canAccessPath(sub.path, role)
+        );
+        if (submenu.length === 0) return null;
+        return { ...item, submenu };
+      })
+      .filter(Boolean) as typeof menuItems;
+  };
+
+  const filteredMenuItems = filterByRole(menuItems);
 
   return (
     <>
@@ -447,6 +472,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed, onToggl
                               : item.name === 'Telemetria' ? toggleTelemetria
                                 : item.name === 'Perímetros' ? togglePerimetros
                                   : item.name === 'Gerência' ? toggleGerencia
+                                    : item.name === 'Mapa' ? toggleMapa
                                     : undefined
                       }
                       style={{ cursor: 'pointer' }}
@@ -454,9 +480,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed, onToggl
                     >
                       {getIcon(item.icon)}
                       {!isCollapsed && <span className="sidebar-text">{item.name}</span>}
-                      {!isCollapsed && <ChevronDown size={16} className={`sidebar-arrow ${(item.name === 'Cadastro' && isCadastroOpen) || (item.name === 'Estoque' && isEstoqueOpen) || (item.name === 'Relatórios' && isRelatoriosOpen) || (item.name === 'Telemetria' && isTelemetriaOpen) || (item.name === 'Perímetros' && isPerimetrosOpen) || (item.name === 'Gerência' && isGerenciaOpen) ? 'open' : ''}`} />}
+                      {!isCollapsed && <ChevronDown size={16} className={`sidebar-arrow ${(item.name === 'Cadastro' && isCadastroOpen) || (item.name === 'Estoque' && isEstoqueOpen) || (item.name === 'Relatórios' && isRelatoriosOpen) || (item.name === 'Telemetria' && isTelemetriaOpen) || (item.name === 'Perímetros' && isPerimetrosOpen) || (item.name === 'Gerência' && isGerenciaOpen) || (item.name === 'Mapa' && isMapaOpen) ? 'open' : ''}`} />}
                     </div>
-                    {((item.name === 'Cadastro' && isCadastroOpen) || (item.name === 'Estoque' && isEstoqueOpen) || (item.name === 'Relatórios' && isRelatoriosOpen) || (item.name === 'Telemetria' && isTelemetriaOpen) || (item.name === 'Perímetros' && isPerimetrosOpen) || (item.name === 'Gerência' && isGerenciaOpen)) && (
+                    {((item.name === 'Cadastro' && isCadastroOpen) || (item.name === 'Estoque' && isEstoqueOpen) || (item.name === 'Relatórios' && isRelatoriosOpen) || (item.name === 'Telemetria' && isTelemetriaOpen) || (item.name === 'Perímetros' && isPerimetrosOpen) || (item.name === 'Gerência' && isGerenciaOpen) || (item.name === 'Mapa' && isMapaOpen)) && (
                       <ul className="sidebar-submenu-list">
                         {item.submenu.map((subItem) => (
                           <li key={subItem.path} className="sidebar-subitem">

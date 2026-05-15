@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import { apiService, type LoginCredentials, type RegisterData } from '../services/api';
+import { socketService } from '../services/socketService';
 
 interface User {
   id: string;
@@ -37,6 +38,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const connectRealtime = (accessToken: string) => {
+    try {
+      socketService.connect(accessToken);
+    } catch (err) {
+      console.warn('WebSocket não conectado:', err);
+    }
+  };
+
   useEffect(() => {
     // Check authentication status on mount
     const checkAuth = async () => {
@@ -48,6 +57,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           const response = await apiService.getCurrentUser();
           setIsAuthenticated(true);
           setUser(response.data.user);
+          connectRealtime(accessToken);
         } catch (error) {
           console.error('Error validating token:', error);
           // Try to refresh token if we have one
@@ -57,6 +67,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
               apiService.setTokens(refreshResponse.data.accessToken, refreshResponse.data.refreshToken);
               setIsAuthenticated(true);
               setUser(refreshResponse.data.user);
+              connectRealtime(refreshResponse.data.accessToken);
             } catch (refreshError) {
               console.error('Error refreshing token:', refreshError);
               apiService.clearTokens();
@@ -76,15 +87,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           apiService.setTokens(refreshResponse.data.accessToken, refreshResponse.data.refreshToken);
           setIsAuthenticated(true);
           setUser(refreshResponse.data.user);
+          connectRealtime(refreshResponse.data.accessToken);
         } catch (error) {
           console.error('Error refreshing token:', error);
           apiService.clearTokens();
+          socketService.disconnect();
           setIsAuthenticated(false);
           setUser(null);
         }
       } else {
         // No tokens available
         apiService.clearTokens();
+        socketService.disconnect();
         setIsAuthenticated(false);
         setUser(null);
       }
@@ -108,6 +122,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // Update state
       setIsAuthenticated(true);
       setUser(response.data.user);
+      connectRealtime(response.data.accessToken);
     } catch (error) {
       let errorMessage = 'Erro no login';
       
@@ -176,6 +191,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     } finally {
       // Clear tokens and state regardless of API call success
       apiService.clearTokens();
+      socketService.disconnect();
       setIsAuthenticated(false);
       setUser(null);
       setError(null);

@@ -19,6 +19,7 @@ export type Maquina = {
     latitude?: number;
     longitude?: number;
     clienteId?: string;
+    rastreadorId?: string;
     placa?: string;
     grupo?: string;
     equipamento?: string;

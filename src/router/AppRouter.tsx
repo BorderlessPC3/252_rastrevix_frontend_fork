@@ -41,8 +41,9 @@ import RelatorioPontos from "../pages/RelatorioPontos"
 import RelatorioViagem from "../pages/RelatorioViagem"
 import RelatorioVinculo from "../pages/RelatorioVinculo"
 import TelemetriaEvento from "../pages/TelemetriaEvento"
+import HistoricoRotas from "../pages/HistoricoRotas"
 import '../styles/toast-custom.css'
-import ProtectedRoute from "./ProtectedRoute"
+import RoleProtectedRoute from "./RoleProtectedRoute"
 
 const AppRouter: React.FC = () => {
   return (
@@ -55,12 +56,13 @@ const AppRouter: React.FC = () => {
 
           {/* Protected routes with Layout */}
           <Route path="/" element={
-            <ProtectedRoute>
+            <RoleProtectedRoute>
               <Layout />
-            </ProtectedRoute>
+            </RoleProtectedRoute>
           }>
             <Route index element={<Dashboard />} />
             <Route path="/mapa" element={<Maps />} />
+            <Route path="/mapa/historico" element={<HistoricoRotas />} />
             <Route path="/cadastro/cliente" element={<CadastroCliente />} />
             <Route path="/cadastro/maquina" element={<CadastroMaquina />} />
             <Route path="/cadastro/colaborador" element={<CadastroColaborador />} />

@@ -4,6 +4,8 @@ import type React from "react"
 import { useState, useEffect } from "react"
 import { Trash2 } from "lucide-react"
 import { maquinaService } from "../services/maquinaService"
+import { rastreadorService } from "../services/rastreadorService"
+import type { Rastreador } from "../types"
 import { clienteService, type Cliente } from "../services/clienteService"
 import ImportExportButtons from "../components/ImportExportButtons"
 import { showSuccess, showError } from "../utils/toast"
@@ -25,6 +27,7 @@ interface Maquina {
   equipamentoNumero?: string;
   dataInstalacaoEquipamento?: string;
   clienteId?: string;
+  rastreadorId?: string;
   dataCadastro: string;
   ultimaAtualizacao: string;
 }
@@ -41,6 +44,7 @@ interface MaquinaFormData {
   equipamento: string;
   equipamentoNumero: string;
   clienteId: string;
+  rastreadorId: string;
 }
 
 const CadastroMaquina: React.FC = () => {
@@ -56,6 +60,7 @@ const CadastroMaquina: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isEditarModalOpen, setIsEditarModalOpen] = useState(false)
   const [maquinaSelecionada, setMaquinaSelecionada] = useState<Maquina | null>(null)
+  const [rastreadores, setRastreadores] = useState<Rastreador[]>([])
   const [formData, setFormData] = useState<MaquinaFormData>({
     codigo: '',
     nome: '',
@@ -67,8 +72,18 @@ const CadastroMaquina: React.FC = () => {
     grupo: '',
     equipamento: '',
     equipamentoNumero: '',
-    clienteId: ''
+    clienteId: '',
+    rastreadorId: ''
   })
+
+  const carregarRastreadores = async () => {
+    try {
+      const res = await rastreadorService.listarRastreadores({ limit: 500, status: 'ativo' })
+      setRastreadores(res.data.rastreadores)
+    } catch {
+      setRastreadores([])
+    }
+  }
 
   // Carregar clientes
   const carregarClientes = async () => {
@@ -105,6 +120,7 @@ const CadastroMaquina: React.FC = () => {
 
   useEffect(() => {
     carregarClientes()
+    carregarRastreadores()
   }, [])
 
   // Quando um cliente é selecionado, carregar seus veículos
@@ -159,7 +175,8 @@ const CadastroMaquina: React.FC = () => {
         grupo: formData.grupo || undefined,
         equipamento: formData.equipamento || undefined,
         equipamentoNumero: formData.equipamentoNumero || undefined,
-        clienteId: formData.clienteId || undefined
+        clienteId: formData.clienteId || undefined,
+        rastreadorId: formData.rastreadorId || undefined
       }
 
       if (maquinaSelecionada) {
@@ -189,7 +206,8 @@ const CadastroMaquina: React.FC = () => {
         grupo: '',
         equipamento: '',
         equipamentoNumero: '',
-        clienteId: clienteSelecionado?.id || ''
+        clienteId: clienteSelecionado?.id || '',
+        rastreadorId: ''
       })
       setMaquinaSelecionada(null)
 
@@ -216,7 +234,8 @@ const CadastroMaquina: React.FC = () => {
       grupo: maquina.grupo || '',
       equipamento: maquina.equipamento || '',
       equipamentoNumero: maquina.equipamentoNumero || '',
-      clienteId: maquina.clienteId || clienteSelecionado?.id || ''
+      clienteId: maquina.clienteId || clienteSelecionado?.id || '',
+      rastreadorId: maquina.rastreadorId || ''
     })
     setIsEditarModalOpen(true)
   }
@@ -285,7 +304,8 @@ const CadastroMaquina: React.FC = () => {
                   grupo: '',
                   equipamento: '',
                   equipamentoNumero: '',
-                  clienteId: clienteSelecionado.id
+                  clienteId: clienteSelecionado.id,
+                  rastreadorId: ''
                 })
                 setIsModalOpen(true)
               }}
@@ -442,6 +462,24 @@ const CadastroMaquina: React.FC = () => {
                         placeholder="Ex: ABC-1234"
                         className="form-input"
                       />
+                    </div>
+
+                    <div className="form-group">
+                      <label htmlFor="rastreadorId">Rastreador GPS</label>
+                      <select
+                        id="rastreadorId"
+                        name="rastreadorId"
+                        value={formData.rastreadorId}
+                        onChange={handleChange}
+                        className="form-input"
+                      >
+                        <option value="">Nenhum</option>
+                        {rastreadores.map((r) => (
+                          <option key={r.id} value={r.id}>
+                            {r.placa || r.nome || r.numeroSerial}
+                          </option>
+                        ))}
+                      </select>
                     </div>
 
                     <div className="form-group">
@@ -635,6 +673,24 @@ const CadastroMaquina: React.FC = () => {
                         placeholder="Ex: ABC-1234"
                         className="form-input"
                       />
+                    </div>
+
+                    <div className="form-group">
+                      <label htmlFor="rastreadorId">Rastreador GPS</label>
+                      <select
+                        id="rastreadorId"
+                        name="rastreadorId"
+                        value={formData.rastreadorId}
+                        onChange={handleChange}
+                        className="form-input"
+                      >
+                        <option value="">Nenhum</option>
+                        {rastreadores.map((r) => (
+                          <option key={r.id} value={r.id}>
+                            {r.placa || r.nome || r.numeroSerial}
+                          </option>
+                        ))}
+                      </select>
                     </div>
 
                     <div className="form-group">

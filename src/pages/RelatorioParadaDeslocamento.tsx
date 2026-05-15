@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { clienteService, type Cliente } from '../services/clienteService';
 import { maquinaService, type Maquina } from '../services/maquinaService';
+import { reportsService, type RelatorioMovimentacaoResult } from '../services/reportsService';
+import { exportToPDF, exportToXLSX } from '../utils/exportUtils';
+import { showError, showSuccess } from '../utils/toast';
 import { Search, Calendar, Clock, DollarSign } from 'lucide-react';
 import '../styles/dashboard-pages.css';
 import '../styles/relatorios.css';
@@ -27,7 +30,8 @@ const RelatorioParadaDeslocamento: React.FC = () => {
   const [veiculos, setVeiculos] = useState<Maquina[]>([]);
   const [veiculosSelecionados, setVeiculosSelecionados] = useState<string[]>([]);
   const [veiculosDropdownOpen, setVeiculosDropdownOpen] = useState(false);
-  const [, setLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [resultado, setResultado] = useState<RelatorioMovimentacaoResult | null>(null);
   const [errors, setErrors] = useState<Partial<Record<keyof RelatorioFormData, string>>>({});
 
   const [formData, setFormData] = useState<RelatorioFormData>({
@@ -237,21 +241,48 @@ const RelatorioParadaDeslocamento: React.FC = () => {
     return Object.keys(novosErros).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validarFormulario()) return;
 
-    if (!validarFormulario()) {
-      return;
+    try {
+      setLoading(true);
+      const dataInicio = new Date(`${formData.dataInicio}T${formData.horaInicio}:00`).toISOString();
+      const dataFim = new Date(`${formData.dataFim}T${formData.horaFim}:59`).toISOString();
+      const res = await reportsService.movimentacao({
+        dataInicio,
+        dataFim,
+        clienteId: formData.clienteId,
+        veiculosIds: veiculosSelecionados,
+        velocidadeMinima: 5
+      });
+      setResultado(res.data);
+      showSuccess('Relatório de movimentação gerado');
+    } catch (err) {
+      showError(err instanceof Error ? err.message : 'Erro ao gerar relatório');
+    } finally {
+      setLoading(false);
     }
+  };
 
-    // Aqui você implementaria a lógica para gerar o relatório
-    console.log('Dados do relatório:', {
-      ...formData,
-      veiculosIds: veiculosSelecionados
-    });
-
-    // TODO: Implementar chamada à API para gerar relatório
-    alert('Relatório gerado com sucesso! (Funcionalidade em desenvolvimento)');
+  const exportarMovimentacao = async (tipo: 'pdf' | 'xlsx') => {
+    if (!resultado) return;
+    const rows = resultado.relatorios.map((r) => ({
+      rastreador: r.rastreadorId,
+      distanciaKm: r.distanciaKm,
+      movimentoMin: r.tempoMovimentoMinutos,
+      paradoMin: r.tempoParadoMinutos,
+      velMax: r.velocidadeMaxima
+    }));
+    const cols = [
+      { key: 'rastreador', label: 'Rastreador' },
+      { key: 'distanciaKm', label: 'Distância (km)' },
+      { key: 'movimentoMin', label: 'Em movimento (min)' },
+      { key: 'paradoMin', label: 'Parado (min)' },
+      { key: 'velMax', label: 'Vel. máx' }
+    ];
+    if (tipo === 'xlsx') await exportToXLSX(rows, 'movimentacao', cols);
+    else await exportToPDF(rows, 'movimentacao', 'Parada e Deslocamento', cols);
   };
 
   return (
@@ -573,9 +604,9 @@ const RelatorioParadaDeslocamento: React.FC = () => {
 
             {/* Botão Pesquisar */}
             <div className="form-actions">
-              <button type="submit" className="btn-pesquisar">
+              <button type="submit" className="btn-pesquisar" disabled={loading}>
                 <Search size={20} />
-                PESQUISAR
+                {loading ? 'GERANDO...' : 'PESQUISAR'}
               </button>
             </div>
           </form>
@@ -586,10 +617,42 @@ const RelatorioParadaDeslocamento: React.FC = () => {
           <div className="descricao-icon">
             <Search size={64} />
           </div>
+          {resultado ? (
+            <>
+              <h2>Resultado — Movimentação</h2>
+              <div style={{ display: 'flex', gap: '0.5rem', margin: '1rem 0' }}>
+                <button type="button" className="btn-secondary" onClick={() => exportarMovimentacao('xlsx')}>Excel</button>
+                <button type="button" className="btn-secondary" onClick={() => exportarMovimentacao('pdf')}>PDF</button>
+              </div>
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Rastreador</th>
+                    <th>Distância</th>
+                    <th>Movimento (min)</th>
+                    <th>Parado (min)</th>
+                    <th>Vel. máx</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {resultado.relatorios.map((r) => (
+                    <tr key={r.rastreadorId}>
+                      <td>{r.rastreadorId.slice(0, 8)}…</td>
+                      <td>{r.distanciaKm} km</td>
+                      <td>{r.tempoMovimentoMinutos}</td>
+                      <td>{r.tempoParadoMinutos}</td>
+                      <td>{r.velocidadeMaxima}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </>
+          ) : (
+            <>
           <h2>Relatório de Parada e Deslocamento</h2>
-          <p>
-            Esse é o Relatório de Parada e Deslocamento. Acima selecione o Cliente, o Período e se quiser um relatório mais detalhado faça os Filtros desejados, após clique no botão Pesquisar para gerar as informações.
-          </p>
+          <p>Análise de tempo em movimento vs parado com base em velocidade GPS real.</p>
+            </>
+          )}
         </div>
       </div>
     </div>

@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { clienteService, type Cliente } from '../services/clienteService';
 import { maquinaService, type Maquina } from '../services/maquinaService';
+import { reportsService, type RelatorioHistoricoResult } from '../services/reportsService';
+import { exportToPDF, exportToXLSX } from '../utils/exportUtils';
+import { showError, showSuccess } from '../utils/toast';
 import { Search, Calendar, Clock } from 'lucide-react';
 import '../styles/dashboard-pages.css';
 import '../styles/relatorios.css';
@@ -26,7 +29,8 @@ const RelatorioHistorico: React.FC = () => {
   const [veiculos, setVeiculos] = useState<Maquina[]>([]);
   const [veiculosSelecionados, setVeiculosSelecionados] = useState<string[]>([]);
   const [veiculosDropdownOpen, setVeiculosDropdownOpen] = useState(false);
-  const [, setLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [resultado, setResultado] = useState<RelatorioHistoricoResult | null>(null);
   const [errors, setErrors] = useState<Partial<Record<keyof RelatorioHistoricoFormData, string>>>({});
 
   const [formData, setFormData] = useState<RelatorioHistoricoFormData>({
@@ -232,19 +236,58 @@ const RelatorioHistorico: React.FC = () => {
     return Object.keys(novosErros).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const buildIsoRange = () => {
+    const ini = `${formData.dataInicio}T${formData.horaInicio}:00`;
+    const fim = `${formData.dataFim}T${formData.horaFim}:59`;
+    return { dataInicio: new Date(ini).toISOString(), dataFim: new Date(fim).toISOString() };
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validarFormulario()) return;
 
-    if (!validarFormulario()) {
-      return;
+    try {
+      setLoading(true);
+      const { dataInicio, dataFim } = buildIsoRange();
+      const res = await reportsService.historico({
+        dataInicio,
+        dataFim,
+        clienteId: formData.clienteId,
+        veiculosIds: veiculosSelecionados
+      });
+      setResultado(res.data);
+      showSuccess(`Relatório gerado: ${res.data.distanciaTotalKm} km em ${res.data.veiculos} veículo(s)`);
+    } catch (err) {
+      showError(err instanceof Error ? err.message : 'Erro ao gerar relatório');
+    } finally {
+      setLoading(false);
     }
+  };
 
-    console.log('Dados do relatório histórico:', {
-      ...formData,
-      veiculosIds: veiculosSelecionados
-    });
-
-    alert('Relatório Histórico gerado com sucesso! (Funcionalidade em desenvolvimento)');
+  const exportarResultado = async (tipo: 'pdf' | 'xlsx') => {
+    if (!resultado) return;
+    const rows = resultado.resultados.flatMap((r, idx) =>
+      r.pontos.slice(0, 500).map((p, i) => ({
+        veiculo: idx + 1,
+        rastreadorId: r.rastreadorId,
+        ordem: i + 1,
+        lat: p.latitude,
+        lng: p.longitude,
+        ts: p.timestamp
+      }))
+    );
+    const cols = [
+      { key: 'veiculo', label: 'Veículo' },
+      { key: 'rastreadorId', label: 'Rastreador' },
+      { key: 'lat', label: 'Lat' },
+      { key: 'lng', label: 'Lng' },
+      { key: 'ts', label: 'Timestamp' }
+    ];
+    if (tipo === 'xlsx') {
+      await exportToXLSX(rows, 'relatorio-historico', cols);
+    } else {
+      await exportToPDF(rows, 'relatorio-historico', 'Relatório Histórico', cols);
+    }
   };
 
   return (
@@ -593,9 +636,9 @@ const RelatorioHistorico: React.FC = () => {
             </div>
 
             <div className="form-actions">
-              <button type="submit" className="btn-pesquisar">
+              <button type="submit" className="btn-pesquisar" disabled={loading}>
                 <Search size={20} />
-                PESQUISAR
+                {loading ? 'GERANDO...' : 'PESQUISAR'}
               </button>
             </div>
           </form>
@@ -605,10 +648,26 @@ const RelatorioHistorico: React.FC = () => {
           <div className="descricao-icon">
             <Search size={64} />
           </div>
+          {resultado ? (
+            <>
+              <h2>Resultado</h2>
+              <p><strong>{resultado.veiculos}</strong> veículo(s) • <strong>{resultado.distanciaTotalKm} km</strong></p>
+              <div style={{ display: 'flex', gap: '0.5rem', margin: '1rem 0' }}>
+                <button type="button" className="btn-secondary" onClick={() => exportarResultado('xlsx')}>Excel</button>
+                <button type="button" className="btn-secondary" onClick={() => exportarResultado('pdf')}>PDF</button>
+              </div>
+              <ul style={{ textAlign: 'left' }}>
+                {resultado.resultados.map((r) => (
+                  <li key={r.rastreadorId}>{r.rastreadorId.slice(0, 8)}… — {r.distanciaKm} km — {r.duracaoMinutos} min</li>
+                ))}
+              </ul>
+            </>
+          ) : (
+            <>
           <h2>Relatório de Histórico</h2>
-          <p>
-            Esse é o Relatório de Histórico do veiculo. Acima selecione o Cliente, selecione o Período e se quiser um relatório mais detalhado faça os Filtros desejados, após clique no botão Carregar para gerar as informações.
-          </p>
+          <p>Selecione cliente, veículos e período para gerar com dados GPS reais.</p>
+            </>
+          )}
         </div>
       </div>
     </div>

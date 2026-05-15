@@ -63,7 +63,7 @@ const Perfil: React.FC = () => {
             <div className="profile-info">
               <h3>{user?.name || "Usuário"}</h3>
               <p>{user?.email || "usuario@exemplo.com"}</p>
-              <span className="profile-role">Administrador</span>
+              <span className="profile-role">{user?.role || 'user'}</span>
             </div>
             <div className="profile-actions">
               {!isEditing ? (
