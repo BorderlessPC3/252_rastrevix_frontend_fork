@@ -590,6 +590,28 @@
   }
 }
 
+.relatorio-loading {
+  padding: 1rem;
+  color: var(--text-secondary, #94a3b8);
+}
+
+.relatorio-toolbar {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.relatorio-table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.relatorio-raw-json {
+  margin-top: 1rem;
+  font-size: 0.85rem;
+}
+
 @media (max-width: 480px) {
   .relatorio-header h1 {
     font-size: 1.5rem;

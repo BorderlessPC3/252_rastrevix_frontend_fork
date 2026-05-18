@@ -131,6 +131,7 @@ class ClienteService {
     async deletarTodosClientes(): Promise<{ message: string; data: { deletedCount: number } }> {
         return apiService.request<{ message: string; data: { deletedCount: number } }>(`${this.baseEndpoint}/all`, {
             method: 'DELETE',
+            headers: { 'X-Confirm-Delete-All': 'true' }
         });
     }
 }

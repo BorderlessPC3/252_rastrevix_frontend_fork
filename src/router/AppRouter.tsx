@@ -4,6 +4,7 @@ import { ToastContainer } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 import Layout from "../components/Layout"
 import { AuthProvider } from "../contexts/AuthContext"
+import { ThemeProvider } from "../contexts/ThemeContext"
 import CadastroCliente from "../pages/CadastroCliente"
 import CadastroColaborador from "../pages/CadastroColaborador"
 import CadastroMaquina from "../pages/CadastroMaquina"
@@ -48,6 +49,7 @@ import RoleProtectedRoute from "./RoleProtectedRoute"
 const AppRouter: React.FC = () => {
   return (
     <AuthProvider>
+      <ThemeProvider>
       <Router>
         <Routes>
           {/* Public routes */}
@@ -124,6 +126,7 @@ const AppRouter: React.FC = () => {
           style={{ zIndex: 9999 }}
         />
       </Router>
+      </ThemeProvider>
     </AuthProvider>
   )
 }

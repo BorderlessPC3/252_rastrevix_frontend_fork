@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { apiService } from '../services/api';
+import { importApiService } from '../services/importApiService';
 import '../styles/integracao.css';
 
 interface IntegrationCard {
@@ -143,173 +144,81 @@ const Integracao: React.FC = () => {
   };
 
   const importClientes = async (data: any[]) => {
-    let successCount = 0;
-    let errorCount = 0;
-
-    for (let i = 0; i < data.length; i++) {
-      const item = data[i];
-      setImportProgress(prev => prev ? { ...prev, current: i + 1 } : null);
-
-      try {
-        const clienteData = {
-          nome: item.nome || item.Nome || '',
-          email: item.email || item.Email || '',
-          telefone: item.telefone || item.Telefone || '',
-          endereco: item.endereco || item.Endereco || item.Endereço || ''
-        };
-
-        await apiService.request('/clientes', {
-          method: 'POST',
-          body: JSON.stringify(clienteData)
-        });
-
-        successCount++;
-      } catch (error) {
-        errorCount++;
-        const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
-        console.error(`❌ Erro ao importar cliente ${i + 1}:`, {
-          error: errorMessage,
-          dados: item
-        });
-      }
-
-      setImportProgress(prev => prev ? { ...prev, success: successCount, errors: errorCount } : null);
-    }
+    const rows = data.map((item) => ({
+      nome: item.nome || item.Nome || '',
+      email: item.email || item.Email || '',
+      telefone: item.telefone || item.Telefone || '',
+      endereco: item.endereco || item.Endereco || item.Endereço || '',
+      empresa: item.empresa || item.Empresa || item.nome || item.Nome || 'Importado'
+    }));
+    const key = `clientes-${Date.now()}`;
+    const res = await importApiService.batchImport({
+      entityType: 'clientes',
+      rows,
+      idempotencyKey: key
+    });
+    const log = res.data.log;
+    setImportProgress({
+      total: log.totalRows,
+      success: log.successCount,
+      errors: log.errorCount,
+      current: log.totalRows
+    });
+    if (log.errors?.length) console.error('Erros importação:', log.errors);
   };
 
   const importMotoristas = async (data: any[]) => {
-    let successCount = 0;
-    let errorCount = 0;
-
-    for (let i = 0; i < data.length; i++) {
-      const item = data[i];
-      setImportProgress(prev => prev ? { ...prev, current: i + 1 } : null);
-
-      try {
-        const colaboradorData = {
-          nome: item.nome || item.Nome || '',
-          email: item.email || item.Email || '',
-          telefone: item.telefone || item.Telefone || '',
-          cargo: item.cargo || item.Cargo || 'Motorista',
-          departamento: item.departamento || item.Departamento || 'operacoes',
-          status: item.status || item.Status || 'ativo',
-          dataContratacao: item.dataContratacao || item.DataContratacao || item['Data Contratacao'] || new Date().toISOString().split('T')[0],
-          salario: item.salario || item.Salario || null,
-          dataNascimento: item.dataNascimento || item.DataNascimento || item['Data Nascimento'] || null,
-          cpf: item.cpf || item.CPF || null,
-          rg: item.rg || item.RG || null,
-          endereco: item.endereco || item.Endereco || item.Endereço || null,
-          cnh: item.cnh || item.CNH || null,
-          categoriaCNH: item.categoriaCNH || item.CategoriaCNH || item['Categoria CNH'] || null,
-          validadeCNH: item.validadeCNH || item.ValidadeCNH || item['Validade CNH'] || null
-        };
-
-        await apiService.request('/colaboradores', {
-          method: 'POST',
-          body: JSON.stringify(colaboradorData)
-        });
-
-        successCount++;
-      } catch (error) {
-        errorCount++;
-        const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
-        console.error(`❌ Erro ao importar motorista ${i + 1}:`, {
-          error: errorMessage,
-          dados: item
-        });
-      }
-
-      setImportProgress(prev => prev ? { ...prev, success: successCount, errors: errorCount } : null);
-    }
+    const rows = data.map((item) => ({
+      nome: item.nome || item.Nome || '',
+      email: item.email || item.Email || '',
+      telefone: item.telefone || item.Telefone || '',
+      cargo: item.cargo || item.Cargo || 'Motorista',
+      dataContratacao:
+        item.dataContratacao || item.DataContratacao || new Date().toISOString().split('T')[0]
+    }));
+    const res = await importApiService.batchImport({
+      entityType: 'motoristas',
+      rows,
+      idempotencyKey: `motoristas-${Date.now()}`
+    });
+    const log = res.data.log;
+    setImportProgress({
+      total: log.totalRows,
+      success: log.successCount,
+      errors: log.errorCount,
+      current: log.totalRows
+    });
   };
 
   const importVeiculos = async (data: any[]) => {
-    let successCount = 0;
-    let errorCount = 0;
-
-    for (let i = 0; i < data.length; i++) {
-      const item = data[i];
-      setImportProgress(prev => prev ? { ...prev, current: i + 1 } : null);
-
-      let maquinaData: any = null;
-
-      try {
-        // Extrair campos com múltiplas variações de nome
-        const codigo = item.codigo || item.Codigo || item.Código || item.placa || item.Placa || '';
-        const nome = item.nome || item.Nome || item.modelo || item.Modelo || '';
-        const tipo = (item.tipo || item.Tipo || 'outras').toLowerCase();
-
-        // Validar campos obrigatórios
-        if (!codigo || codigo.trim().length < 3) {
-          throw new Error(`Campo 'codigo' obrigatório e deve ter no mínimo 3 caracteres (linha ${i + 1})`);
-        }
-
-        if (!nome || nome.trim().length < 2) {
-          throw new Error(`Campo 'nome' obrigatório e deve ter no mínimo 2 caracteres (linha ${i + 1})`);
-        }
-
-        // Validar tipo (deve ser um dos valores válidos)
-        const tiposValidos = ['torno', 'fresa', 'soldadora', 'prensa', 'cnc', 'outras'];
-        const tipoNormalizado = tiposValidos.includes(tipo) ? tipo : 'outras';
-
-        maquinaData = {
-          codigo: codigo.trim(),
-          nome: nome.trim(),
-          tipo: tipoNormalizado,
-          status: (item.status || item.Status || 'ativa').toLowerCase(),
-          fabricante: item.fabricante || item.Fabricante || undefined,
-          modelo: item.modelo || item.Modelo || undefined,
-          numeroSerie: item.numeroSerie || item.NumeroSerie || item['Numero Serie'] || item['Número de Série'] || undefined,
-          placa: item.placa || item.Placa || undefined,
-          anoFabricacao: item.anoFabricacao || item.AnoFabricacao || item['Ano Fabricacao'] || item['Ano de Fabricação'] || undefined,
-          cor: item.cor || item.Cor || undefined,
-          chassi: item.chassi || item.Chassi || undefined,
-          renavam: item.renavam || item.Renavam || item.RENAVAM || undefined,
-          combustivel: item.combustivel || item.Combustivel || item.Combustível || undefined,
-          localizacao: item.localizacao || item.Localizacao || item.Localização || undefined,
-          responsavel: item.responsavel || item.Responsavel || item.Responsável || undefined,
-          valorCompra: item.valorCompra || item.ValorCompra || item['Valor Compra'] || undefined
-        };
-
-        // Remover campos undefined
-        Object.keys(maquinaData).forEach(key => {
-          if (maquinaData[key as keyof typeof maquinaData] === undefined) {
-            delete maquinaData[key as keyof typeof maquinaData];
-          }
-        });
-
-        console.log(`📤 Enviando veículo ${i + 1}:`, maquinaData);
-
-        await apiService.request('/maquinas', {
-          method: 'POST',
-          body: JSON.stringify(maquinaData)
-        });
-
-        successCount++;
-        console.log(`✅ Veículo ${i + 1} importado com sucesso:`, codigo);
-      } catch (error: any) {
-        errorCount++;
-
-        // Tentar extrair detalhes do erro
-        let errorDetails = '';
-        if (error?.message) {
-          errorDetails = error.message;
-        }
-        if (error?.details) {
-          errorDetails += ` - Detalhes: ${JSON.stringify(error.details)}`;
-        }
-
-        console.error(`❌ Erro ao importar veículo ${i + 1}:`, {
-          erro: errorDetails || 'Erro desconhecido',
-          linha: i + 1,
-          dadosEnviados: maquinaData,
-          dadosOriginais: item,
-          objetoErro: error
-        });
-      }
-
-      setImportProgress(prev => prev ? { ...prev, success: successCount, errors: errorCount } : null);
-    }
+    const rows = data.map((item) => {
+      const codigo = item.codigo || item.Codigo || item.placa || item.Placa || '';
+      const nome = item.nome || item.Nome || item.modelo || item.Modelo || codigo;
+      const tipo = String(item.tipo || item.Tipo || 'outras').toLowerCase();
+      return {
+        codigo: String(codigo).trim(),
+        nome: String(nome).trim(),
+        tipo,
+        status: String(item.status || item.Status || 'ativa').toLowerCase(),
+        placa: item.placa || item.Placa,
+        fabricante: item.fabricante || item.Fabricante,
+        modelo: item.modelo || item.Modelo,
+        clienteEmail: item.clienteEmail || item.ClienteEmail
+      };
+    });
+    const res = await importApiService.batchImport({
+      entityType: 'veiculos',
+      rows,
+      idempotencyKey: `veiculos-${Date.now()}`
+    });
+    const log = res.data.log;
+    setImportProgress({
+      total: log.totalRows,
+      success: log.successCount,
+      errors: log.errorCount,
+      current: log.totalRows
+    });
+    if (log.errors?.length) console.error('Erros importação veículos:', log.errors);
   };
 
   const importPontos = async (_data: any[]) => {

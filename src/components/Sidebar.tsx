@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { canAccessPath } from '../utils/rbac';
+import { useTheme } from '../contexts/ThemeContext';
 import {
   Home,
   Map,
@@ -50,6 +51,7 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed, onToggleCollapse }) => {
   const location = useLocation();
   const { isAuthenticated, user, logout } = useAuth();
+  const { branding } = useTheme();
   const [isCadastroOpen, setIsCadastroOpen] = useState(location.pathname.startsWith('/cadastro'));
   const [isEstoqueOpen, setIsEstoqueOpen] = useState(location.pathname.startsWith('/estoque'));
   const [isRelatoriosOpen, setIsRelatoriosOpen] = useState(location.pathname.startsWith('/relatorios'));
@@ -445,8 +447,14 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed, onToggl
       <div className={`sidebar ${isOpen ? 'sidebar-open' : ''} ${isCollapsed ? 'sidebar-collapsed' : ''}`}>
         <div className="sidebar-header">
           <div className="sidebar-logo">
-            <span className="logo-icon"></span>
-            {!isCollapsed && <span className="logo-text">Rastrevix</span>}
+            {branding?.logoUrl ? (
+              <img src={branding.logoUrl} alt="" className="logo-img" style={{ height: 28 }} />
+            ) : (
+              <span className="logo-icon"></span>
+            )}
+            {!isCollapsed && (
+              <span className="logo-text">{branding?.name || 'Rastrevix'}</span>
+            )}
           </div>
           <button
             className="sidebar-collapse-btn"
@@ -559,3 +567,4 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed, onToggl
 };
 
 export default Sidebar;
+
