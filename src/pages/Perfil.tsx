@@ -1,21 +1,36 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useAuth } from "../contexts/AuthContext"
+import { userService } from "../services/userService"
+import { showError, showSuccess } from "../utils/toast"
 import "../styles/dashboard-pages.css"
 
 const Perfil: React.FC = () => {
   const { user } = useAuth()
   const [isEditing, setIsEditing] = useState(false)
+  const [saving, setSaving] = useState(false)
   const [formData, setFormData] = useState({
     name: user?.name || "",
     email: user?.email || "",
-    phone: "",
-    company: "",
-    position: "",
-    department: ""
+    phone: user?.phone || "",
+    company: user?.company || "",
+    position: user?.position || "",
+    department: user?.department || ""
   })
+
+  useEffect(() => {
+    if (!user) return
+    setFormData({
+      name: user.name || "",
+      email: user.email || "",
+      phone: user.phone || "",
+      company: user.company || "",
+      position: user.position || "",
+      department: user.department || ""
+    })
+  }, [user])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target
@@ -25,22 +40,34 @@ const Perfil: React.FC = () => {
     }))
   }
 
-  const handleSave = () => {
-    // Aqui você implementaria a lógica para salvar as alterações
-    console.log("Salvando dados do perfil:", formData)
-    setIsEditing(false)
-    // Simular sucesso
-    alert("Perfil atualizado com sucesso!")
+  const handleSave = async () => {
+    if (!user?.id) return
+    try {
+      setSaving(true)
+      await userService.updateProfile(user.id, {
+        name: formData.name,
+        phone: formData.phone || undefined,
+        company: formData.company || undefined,
+        position: formData.position || undefined,
+        department: formData.department || undefined
+      })
+      setIsEditing(false)
+      showSuccess("Perfil atualizado com sucesso")
+    } catch (e) {
+      showError(e instanceof Error ? e.message : "Erro ao salvar perfil")
+    } finally {
+      setSaving(false)
+    }
   }
 
   const handleCancel = () => {
     setFormData({
       name: user?.name || "",
       email: user?.email || "",
-      phone: "",
-      company: "",
-      position: "",
-      department: ""
+      phone: user?.phone || "",
+      company: user?.company || "",
+      position: user?.position || "",
+      department: user?.department || ""
     })
     setIsEditing(false)
   }
@@ -78,8 +105,9 @@ const Perfil: React.FC = () => {
                   <button 
                     className="btn btn-primary"
                     onClick={handleSave}
+                    disabled={saving}
                   >
-                    Salvar
+                    {saving ? "Salvando…" : "Salvar"}
                   </button>
                   <button 
                     className="btn btn-secondary"
@@ -118,8 +146,9 @@ const Perfil: React.FC = () => {
                   name="email"
                   value={formData.email}
                   onChange={handleInputChange}
-                  disabled={!isEditing}
+                  disabled
                   className="form-input"
+                  title="O e-mail não pode ser alterado aqui"
                 />
               </div>
               

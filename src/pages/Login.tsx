@@ -4,6 +4,7 @@ import type React from "react"
 import { useState } from "react"
 import { useNavigate, Link } from "react-router-dom"
 import { useAuth } from "../contexts/AuthContext"
+import { isPublicRegisterEnabled } from "../config/env"
 
 const Login: React.FC = () => {
   const navigate = useNavigate()
@@ -101,11 +102,13 @@ const Login: React.FC = () => {
           </button>
         </form>
 
-        <div className="auth-links">
-          <p>
-            Não tem uma conta? <Link to="/register">Crie uma aqui</Link>
-          </p>
-        </div>
+        {isPublicRegisterEnabled && (
+          <div className="auth-links">
+            <p>
+              Não tem uma conta? <Link to="/register">Crie uma aqui</Link>
+            </p>
+          </div>
+        )}
       </div>
     </div>
   )

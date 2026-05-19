@@ -39,7 +39,10 @@ const RelatorioComResultado: React.FC<RelatorioComResultadoProps> = ({
       const base = buildReportPayload(form);
       const payload = { ...base, ...(extraPayload?.(form) ?? {}) };
       const res = await fetchReport(payload);
-      const data = (res as { data?: unknown }).data ?? res;
+      const data =
+        res && typeof res === 'object' && 'data' in res
+          ? (res as { data: unknown }).data
+          : res;
       setRawData(data);
       const mapped = mapRows(data);
       setRows(mapped);
