@@ -3,12 +3,15 @@
 import type React from "react"
 import { useEffect, useState } from "react"
 import { useAuth } from "../contexts/AuthContext"
+import { useTheme } from "../contexts/ThemeContext"
 import { userService } from "../services/userService"
 import { showError, showSuccess } from "../utils/toast"
+import PageFeedback from "../components/PageFeedback"
 import "../styles/dashboard-pages.css"
 
 const Perfil: React.FC = () => {
   const { user } = useAuth()
+  const { branding, loading: brandingLoading } = useTheme()
   const [isEditing, setIsEditing] = useState(false)
   const [saving, setSaving] = useState(false)
   const [formData, setFormData] = useState({
@@ -220,42 +223,51 @@ const Perfil: React.FC = () => {
           </div>
 
           <div className="card card-elevated">
-            <h3>Preferências de Conta</h3>
-            <div className="preferences-grid">
-              <div className="preference-item">
-                <div className="preference-info">
-                  <h4>Notificações por E-mail</h4>
-                  <p>Receber notificações importantes por e-mail</p>
+            <h3>Identidade visual (tenant)</h3>
+            <p className="profile-branding-hint">
+              Cores e logotipo carregados do servidor para o seu ambiente.
+            </p>
+            {brandingLoading ? (
+              <PageFeedback loading loadingMessage="Carregando branding…" />
+            ) : branding ? (
+              <div className="profile-branding-preview">
+                <div className="profile-branding-logo">
+                  {branding.logoUrl ? (
+                    <img src={branding.logoUrl} alt="" style={{ maxHeight: 48 }} />
+                  ) : (
+                    <span className="profile-branding-placeholder">Sem logo</span>
+                  )}
                 </div>
-                <div className="toggle-switch">
-                  <input type="checkbox" id="email-notifications" defaultChecked />
-                  <label htmlFor="email-notifications"></label>
-                </div>
+                <dl className="profile-branding-meta">
+                  <div>
+                    <dt>Nome exibido</dt>
+                    <dd>{branding.name}</dd>
+                  </div>
+                  <div>
+                    <dt>Cor primária</dt>
+                    <dd>
+                      <span
+                        className="profile-color-swatch"
+                        style={{ background: branding.primaryColor }}
+                      />
+                      {branding.primaryColor}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Cor secundária</dt>
+                    <dd>
+                      <span
+                        className="profile-color-swatch"
+                        style={{ background: branding.secondaryColor }}
+                      />
+                      {branding.secondaryColor}
+                    </dd>
+                  </div>
+                </dl>
               </div>
-              
-              <div className="preference-item">
-                <div className="preference-info">
-                  <h4>Modo Escuro</h4>
-                  <p>Usar tema escuro na interface</p>
-                </div>
-                <div className="toggle-switch">
-                  <input type="checkbox" id="dark-mode" defaultChecked />
-                  <label htmlFor="dark-mode"></label>
-                </div>
-              </div>
-              
-              <div className="preference-item">
-                <div className="preference-info">
-                  <h4>Idioma</h4>
-                  <p>Selecionar idioma da interface</p>
-                </div>
-                <select className="form-input" style={{ width: "200px" }}>
-                  <option value="pt-BR">Português (Brasil)</option>
-                  <option value="en-US">English (US)</option>
-                  <option value="es-ES">Español</option>
-                </select>
-              </div>
-            </div>
+            ) : (
+              <p className="profile-branding-hint">Usando identidade padrão Rastrevix.</p>
+            )}
           </div>
         </div>
       </div>

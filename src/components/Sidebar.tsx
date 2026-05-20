@@ -193,7 +193,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed, onToggl
           return item.path && !canAccessPath(item.path, role) ? null : item;
         }
         const submenu = item.submenu.filter(
-          (sub) => canAccessPath(sub.path, role)
+          (sub): sub is ProductMenuItem & { path: string } =>
+            typeof sub.path === 'string' && canAccessPath(sub.path, role)
         );
         if (submenu.length === 0) return null;
         return { ...item, submenu };
@@ -265,7 +266,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed, onToggl
                         {item.submenu.map((subItem) => (
                           <li key={subItem.path} className="sidebar-subitem">
                             <Link
-                              to={subItem.path}
+                              to={subItem.path!}
                               className={`sidebar-sublink ${location.pathname === subItem.path ? 'active' : ''
                                 }`}
                               onClick={onClose}
@@ -280,7 +281,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed, onToggl
                   </div>
                 ) : (
                   <Link
-                    to={item.path}
+                    to={item.path!}
                     className={`sidebar-link ${location.pathname === item.path ? 'active' : ''
                       }`}
                     onClick={onClose}

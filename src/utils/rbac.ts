@@ -1,3 +1,5 @@
+import { ENABLED_APP_PATHS } from '../config/productMenu';
+
 export type UserRole = 'admin' | 'manager' | 'user';
 
 const ROLE_RANK: Record<UserRole, number> = {
@@ -17,23 +19,23 @@ export function hasMinimumRole(userRole: string | undefined, minimum: UserRole):
 }
 
 /** Rotas que exigem pelo menos manager */
-export const MANAGER_ROUTES = [
+export const MANAGER_ROUTE_PREFIXES = [
   '/gerencia/integracao',
-  '/cadastro/cliente',
-  '/estoque',
-];
+  '/cadastro',
+  '/estoque'
+] as const;
 
-/** Rotas exclusivas admin */
-export const ADMIN_ROUTES: string[] = [];
+export function isEnabledAppPath(path: string): boolean {
+  return (ENABLED_APP_PATHS as readonly string[]).includes(path);
+}
 
 export function canAccessPath(path: string, role?: string): boolean {
+  if (!isEnabledAppPath(path)) return false;
+
   const r = normalizeRole(role);
   if (r === 'admin') return true;
 
-  const isAdminOnly = ADMIN_ROUTES.some((p) => path.startsWith(p));
-  if (isAdminOnly) return false;
-
-  const needsManager = MANAGER_ROUTES.some((p) => path.startsWith(p));
+  const needsManager = MANAGER_ROUTE_PREFIXES.some((p) => path.startsWith(p));
   if (needsManager) return hasMinimumRole(r, 'manager');
 
   return true;

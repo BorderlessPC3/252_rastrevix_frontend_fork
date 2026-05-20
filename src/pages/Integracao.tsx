@@ -4,7 +4,6 @@ import {
   Upload,
   Download,
   Users,
-  MapPin,
   Car,
   Loader,
   CheckCircle,
@@ -23,7 +22,7 @@ interface IntegrationCard {
   title: string;
   description: string;
   icon: React.ReactNode;
-  category: 'cadastro' | 'perimetros';
+  category: 'cadastro';
 }
 
 interface ImportProgress {
@@ -61,13 +60,6 @@ const Integracao: React.FC = () => {
       description: 'Veículos e máquinas',
       icon: <Car size={40} />,
       category: 'cadastro'
-    },
-    {
-      id: 'pontos',
-      title: 'Pontos',
-      description: 'Pontos de interesse',
-      icon: <MapPin size={40} />,
-      category: 'perimetros'
     }
   ];
 
@@ -102,9 +94,6 @@ const Integracao: React.FC = () => {
           break;
         case 'veiculos':
           await importVeiculos(jsonData);
-          break;
-        case 'pontos':
-          await importPontos(jsonData);
           break;
         default:
           toast.error('Tipo de importação não implementado');
@@ -219,10 +208,6 @@ const Integracao: React.FC = () => {
       current: log.totalRows
     });
     if (log.errors?.length) console.error('Erros importação veículos:', log.errors);
-  };
-
-  const importPontos = async (_data: any[]) => {
-    toast.info('Importação de pontos em desenvolvimento');
   };
 
   const handleDownloadTemplate = (cardId: string) => {
@@ -340,9 +325,6 @@ const Integracao: React.FC = () => {
           endpoint = '/maquinas';
           filename = 'veiculos.xlsx';
           break;
-        case 'pontos':
-          toast.info('Exportação de pontos em desenvolvimento');
-          return;
         default:
           toast.error('Tipo de exportação não implementado');
           return;
@@ -432,28 +414,12 @@ const Integracao: React.FC = () => {
             anoFabricacao: '2023'
           }
         };
-      case 'pontos':
-        return {
-          title: 'Campos para Importação de Pontos',
-          required: ['nome', 'latitude', 'longitude'],
-          optional: ['descricao', 'tipo', 'endereco'],
-          example: {
-            nome: 'Base Principal',
-            latitude: '-23.5505',
-            longitude: '-46.6333',
-            descricao: 'Sede da empresa',
-            tipo: 'base'
-          }
-        };
       default:
         return null;
     }
   };
 
-  const groupedCards = {
-    cadastro: integrationCards.filter(c => c.category === 'cadastro'),
-    perimetros: integrationCards.filter(c => c.category === 'perimetros')
-  };
+  const cadastroCards = integrationCards.filter((c) => c.category === 'cadastro');
 
   return (
     <div className="integracao-container">
@@ -591,55 +557,7 @@ const Integracao: React.FC = () => {
       <section className="integration-section">
         <h2 className="section-title">Cadastro</h2>
         <div className="integration-grid-large">
-          {groupedCards.cadastro.map((card) => (
-            <div key={card.id} className="integration-card-wrapper">
-              <input
-                type="file"
-                ref={(el) => { fileInputRefs.current[card.id] = el; }}
-                onChange={(e) => handleFileChange(card.id, e)}
-                accept=".xlsx,.xls,.csv"
-                style={{ display: 'none' }}
-              />
-              <div className="integration-card-large">
-                <div className="card-icon-large">{card.icon}</div>
-                <div className="card-label">{card.title}</div>
-                <div className="card-actions-inline">
-                  <button
-                    className="btn-action import"
-                    onClick={() => handleImportClick(card.id)}
-                    disabled={isImporting && selectedCard === card.id}
-                    title="Importar"
-                  >
-                    {isImporting && selectedCard === card.id ? (
-                      <Loader size={18} className="spinner" />
-                    ) : (
-                      <Upload size={18} />
-                    )}
-                  </button>
-                  <button
-                    className="btn-action export"
-                    onClick={() => handleExport(card.id)}
-                    disabled={isExporting && selectedCard === card.id}
-                    title="Exportar"
-                  >
-                    {isExporting && selectedCard === card.id ? (
-                      <Loader size={18} className="spinner" />
-                    ) : (
-                      <Download size={18} />
-                    )}
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Perímetros */}
-      <section className="integration-section">
-        <h2 className="section-title">Perímetros</h2>
-        <div className="integration-grid-large">
-          {groupedCards.perimetros.map((card) => (
+          {cadastroCards.map((card) => (
             <div key={card.id} className="integration-card-wrapper">
               <input
                 type="file"

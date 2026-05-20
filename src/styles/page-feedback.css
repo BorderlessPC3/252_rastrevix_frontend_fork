@@ -1,0 +1,36 @@
+.page-feedback {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  min-height: 160px;
+  padding: 2rem 1rem;
+  text-align: center;
+  color: var(--text-secondary, #94a3b8);
+}
+
+.page-feedback--error {
+  color: #f87171;
+}
+
+.page-feedback--error .btn {
+  margin-top: 0.5rem;
+}
+
+.page-feedback-spinner {
+  animation: page-feedback-spin 0.9s linear infinite;
+}
+
+@keyframes page-feedback-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 768px) {
+  .page-feedback {
+    min-height: 120px;
+    padding: 1.25rem 0.75rem;
+  }
+}

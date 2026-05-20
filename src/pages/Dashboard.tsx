@@ -2,10 +2,14 @@
 
 import type React from "react"
 import { useState, useEffect } from "react"
+import { Link } from "react-router-dom"
 import { useAuth } from "../contexts/AuthContext"
+import { canAccessPath } from "../utils/rbac"
 import { maquinaService } from "../services/maquinaService"
 import { clienteService } from "../services/clienteService"
 import { colaboradorService } from "../services/colaboradorService"
+import PageFeedback from "../components/PageFeedback"
+import { showError } from "../utils/toast"
 import "../styles/dashboard-pages.css"
 
 interface DashboardStats {
@@ -17,6 +21,7 @@ interface DashboardStats {
   colaboradoresAtivos: number
   eficienciaMedia: number
   loading: boolean
+  error: string | null
 }
 
 const Dashboard: React.FC = () => {
@@ -31,7 +36,8 @@ const Dashboard: React.FC = () => {
     totalColaboradores: 0,
     colaboradoresAtivos: 0,
     eficienciaMedia: 0,
-    loading: true
+    loading: true,
+    error: null
   })
 
   useEffect(() => {
@@ -40,7 +46,7 @@ const Dashboard: React.FC = () => {
 
   const carregarEstatisticas = async () => {
     try {
-      setStats(prev => ({ ...prev, loading: true }))
+      setStats(prev => ({ ...prev, loading: true, error: null }))
 
       // Carregar estatísticas de máquinas
       const maquinasStats = await maquinaService.obterEstatisticas()
@@ -59,11 +65,14 @@ const Dashboard: React.FC = () => {
         totalColaboradores: colaboradoresStats.data.total,
         colaboradoresAtivos: colaboradoresStats.data.ativos,
         eficienciaMedia: maquinasStats.data.eficienciaMedia,
-        loading: false
+        loading: false,
+        error: null
       })
     } catch (err) {
       console.error('Erro ao carregar estatísticas:', err)
-      setStats(prev => ({ ...prev, loading: false }))
+      const msg = err instanceof Error ? err.message : 'Erro ao carregar o dashboard'
+      showError(msg)
+      setStats(prev => ({ ...prev, loading: false, error: msg }))
     }
   }
 
@@ -90,17 +99,19 @@ const Dashboard: React.FC = () => {
       <div className="dashboard-content">
         <div className="dashboard-welcome">
           <h2>Bem-vindo de volta, {userName}!</h2>
-          <p>Carregando informações...</p>
         </div>
-        <div className="dashboard-grid">
-          {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="card card-elevated" style={{ minHeight: '120px' }}>
-              <div className="stats-content">
-                <h3 style={{ opacity: 0.3 }}>Carregando...</h3>
-              </div>
-            </div>
-          ))}
+        <PageFeedback loading loadingMessage="Carregando resumo da frota…" />
+      </div>
+    )
+  }
+
+  if (stats.error) {
+    return (
+      <div className="dashboard-content">
+        <div className="dashboard-welcome">
+          <h2>Bem-vindo de volta, {userName}!</h2>
         </div>
+        <PageFeedback error={stats.error} onRetry={carregarEstatisticas} />
       </div>
     )
   }
@@ -221,6 +232,16 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
       </div>
+
+      <nav className="dashboard-quick-nav" aria-label="Atalhos principais">
+        <Link to="/mapa">Mapa ao vivo</Link>
+        <Link to="/mapa/historico">Replay de rotas</Link>
+        <Link to="/relatorios/historico">Relatórios</Link>
+        {canAccessPath("/gerencia/integracao", user?.role) && (
+          <Link to="/gerencia/integracao">Integração</Link>
+        )}
+        <Link to="/profile">Perfil</Link>
+      </nav>
     </div>
   )
 }

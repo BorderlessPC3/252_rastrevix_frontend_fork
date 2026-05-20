@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { canAccessPath } from '../utils/rbac';
+import { canAccessPath, isEnabledAppPath } from '../utils/rbac';
+import { showError } from '../utils/toast';
+import PageFeedback from '../components/PageFeedback';
 
 interface RoleProtectedRouteProps {
   children: React.ReactNode;
@@ -10,12 +12,15 @@ interface RoleProtectedRouteProps {
 const RoleProtectedRoute: React.FC<RoleProtectedRouteProps> = ({ children }) => {
   const { isAuthenticated, user, loading } = useAuth();
   const location = useLocation();
+  const deniedNotified = useRef(false);
+
+  useEffect(() => {
+    deniedNotified.current = false;
+  }, [location.pathname]);
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-        Carregando...
-      </div>
+      <PageFeedback loading loadingMessage="Verificando sessão…" />
     );
   }
 
@@ -23,7 +28,17 @@ const RoleProtectedRoute: React.FC<RoleProtectedRouteProps> = ({ children }) => 
     return <Navigate to="/login" replace state={{ from: location }} />;
   }
 
-  if (!canAccessPath(location.pathname, user?.role)) {
+  const path = location.pathname;
+
+  if (!isEnabledAppPath(path)) {
+    return <Navigate to="/" replace />;
+  }
+
+  if (!canAccessPath(path, user?.role)) {
+    if (!deniedNotified.current) {
+      deniedNotified.current = true;
+      showError('Você não tem permissão para acessar esta página.');
+    }
     return <Navigate to="/" replace />;
   }
 
