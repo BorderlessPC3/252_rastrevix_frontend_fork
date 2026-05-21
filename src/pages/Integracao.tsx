@@ -32,6 +32,31 @@ interface ImportProgress {
   current: number;
 }
 
+interface ImportLogResult {
+  totalRows: number;
+  successCount: number;
+  errorCount: number;
+  skippedCount?: number;
+  errors?: Array<{ row: number; message: string }>;
+}
+
+function notifyImportResult(log: ImportLogResult, label: string) {
+  const skipped = log.skippedCount ?? 0;
+  const summary = `${label}: ${log.successCount} ok, ${skipped} ignorados, ${log.errorCount} erros (total ${log.totalRows})`;
+
+  if (log.errorCount > 0) {
+    const first = log.errors?.slice(0, 3).map((e) => `Linha ${e.row}: ${e.message}`).join(' · ');
+    toast.warning(`${summary}${first ? ` — ${first}` : ''}`, { autoClose: 8000 });
+    if (log.errors && log.errors.length > 3) {
+      console.warn(`[Importação ${label}] demais erros:`, log.errors);
+    }
+  } else if (skipped > 0 && log.successCount === 0) {
+    toast.info(summary, { autoClose: 5000 });
+  } else {
+    toast.success(summary, { autoClose: 4000 });
+  }
+}
+
 const Integracao: React.FC = () => {
   const [isImporting, setIsImporting] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
@@ -98,24 +123,10 @@ const Integracao: React.FC = () => {
         default:
           toast.error('Tipo de importação não implementado');
       }
-
-      const finalProgress = importProgress;
-      if (finalProgress) {
-        if (finalProgress.errors > 0) {
-          toast.warning(
-            `Importação concluída com ressalvas: ${finalProgress.success} sucesso, ${finalProgress.errors} erros. Verifique o console para detalhes.`,
-            { autoClose: 5000 }
-          );
-        } else {
-          toast.success(
-            `Importação concluída! ${finalProgress.success} registros importados com sucesso.`,
-            { autoClose: 3000 }
-          );
-        }
-      }
     } catch (error) {
       console.error('Erro ao importar:', error);
-      toast.error('Erro ao processar arquivo de importação');
+      const msg = error instanceof Error ? error.message : 'Erro ao processar arquivo de importação';
+      toast.error(msg);
     } finally {
       setIsImporting(false);
       setSelectedCard(null);
@@ -153,7 +164,7 @@ const Integracao: React.FC = () => {
       errors: log.errorCount,
       current: log.totalRows
     });
-    if (log.errors?.length) console.error('Erros importação:', log.errors);
+    notifyImportResult(log, 'Clientes');
   };
 
   const importMotoristas = async (data: any[]) => {
@@ -162,6 +173,8 @@ const Integracao: React.FC = () => {
       email: item.email || item.Email || '',
       telefone: item.telefone || item.Telefone || '',
       cargo: item.cargo || item.Cargo || 'Motorista',
+      clienteEmail:
+        item.clienteEmail || item.ClienteEmail || item.emailCliente || item.EmailCliente || '',
       dataContratacao:
         item.dataContratacao || item.DataContratacao || new Date().toISOString().split('T')[0]
     }));
@@ -177,6 +190,7 @@ const Integracao: React.FC = () => {
       errors: log.errorCount,
       current: log.totalRows
     });
+    notifyImportResult(log, 'Motoristas');
   };
 
   const importVeiculos = async (data: any[]) => {
@@ -192,7 +206,8 @@ const Integracao: React.FC = () => {
         placa: item.placa || item.Placa,
         fabricante: item.fabricante || item.Fabricante,
         modelo: item.modelo || item.Modelo,
-        clienteEmail: item.clienteEmail || item.ClienteEmail
+        clienteEmail:
+          item.clienteEmail || item.ClienteEmail || item.emailCliente || item.EmailCliente || ''
       };
     });
     const res = await importApiService.batchImport({
@@ -207,7 +222,7 @@ const Integracao: React.FC = () => {
       errors: log.errorCount,
       current: log.totalRows
     });
-    if (log.errors?.length) console.error('Erros importação veículos:', log.errors);
+    notifyImportResult(log, 'Veículos');
   };
 
   const handleDownloadTemplate = (cardId: string) => {
@@ -228,16 +243,10 @@ const Integracao: React.FC = () => {
         templateData = [{
           nome: 'Carlos Santos',
           email: 'carlos@email.com',
+          clienteEmail: 'joao@email.com',
           telefone: '(11) 91234-5678',
           cargo: 'Motorista',
-          departamento: 'operacoes',
-          status: 'ativo',
-          dataContratacao: '2024-01-15',
-          cpf: '123.456.789-00',
-          rg: '12.345.678-9',
-          cnh: '12345678901',
-          categoriaCNH: 'D',
-          validadeCNH: '2028-12-31'
+          dataContratacao: '2024-01-15'
         }];
         filename = 'template_motoristas.xlsx';
         break;
@@ -246,34 +255,22 @@ const Integracao: React.FC = () => {
           {
             codigo: 'VEI001',
             nome: 'Caminhão Mercedes Atego',
+            clienteEmail: 'joao@email.com',
             tipo: 'outras',
             status: 'ativa',
             placa: 'ABC-1234',
             fabricante: 'Mercedes-Benz',
-            modelo: 'Atego 1719',
-            anoFabricacao: '2023',
-            cor: 'Branco',
-            chassi: '9BM384085K1234567',
-            renavam: '12345678901',
-            combustivel: 'Diesel'
+            modelo: 'Atego 1719'
           },
           {
             codigo: 'VEI002',
             nome: 'Van Sprinter',
+            clienteEmail: 'joao@email.com',
             tipo: 'outras',
             status: 'ativa',
             placa: 'XYZ-5678',
             fabricante: 'Mercedes-Benz',
-            modelo: 'Sprinter 515',
-            anoFabricacao: '2022'
-          },
-          {
-            codigo: 'MAQ001',
-            nome: 'Torno CNC',
-            tipo: 'cnc',
-            status: 'ativa',
-            fabricante: 'Romi',
-            modelo: 'GL240M'
+            modelo: 'Sprinter 515'
           }
         ];
         filename = 'template_veiculos.xlsx';
@@ -384,34 +381,31 @@ const Integracao: React.FC = () => {
       case 'motoristas':
         return {
           title: 'Campos para Importação de Motoristas',
-          required: ['nome', 'email', 'telefone', 'cargo', 'dataContratacao'],
-          optional: ['departamento', 'status', 'salario', 'cpf', 'rg', 'endereco', 'cnh', 'categoriaCNH', 'validadeCNH'],
+          required: ['nome', 'email', 'clienteEmail (e-mail do cliente já cadastrado)'],
+          optional: ['telefone', 'cargo', 'dataContratacao'],
           example: {
             nome: 'Carlos Santos',
             email: 'carlos@email.com',
+            clienteEmail: 'joao@email.com',
             telefone: '(11) 91234-5678',
             cargo: 'Motorista',
-            departamento: 'operacoes',
-            status: 'ativo',
-            dataContratacao: '2024-01-15',
-            cnh: '12345678901',
-            categoriaCNH: 'D'
+            dataContratacao: '2024-01-15'
           }
         };
       case 'veiculos':
         return {
           title: 'Campos para Importação de Veículos',
-          required: ['codigo (mín. 3 caracteres)', 'nome (mín. 2 caracteres)'],
-          optional: ['tipo (torno|fresa|soldadora|prensa|cnc|outras)', 'status (ativa|inativa|manutencao|calibracao)', 'placa', 'modelo', 'fabricante', 'anoFabricacao', 'cor', 'chassi', 'renavam', 'combustivel', 'localizacao', 'responsavel'],
+          required: ['codigo', 'clienteEmail (e-mail do cliente já cadastrado)'],
+          optional: ['nome', 'tipo', 'status', 'placa', 'modelo', 'fabricante'],
           example: {
             codigo: 'VEI001',
             nome: 'Caminhão Mercedes Atego',
+            clienteEmail: 'joao@email.com',
             tipo: 'outras',
             status: 'ativa',
             placa: 'ABC-1234',
             fabricante: 'Mercedes-Benz',
-            modelo: 'Atego 1719',
-            anoFabricacao: '2023'
+            modelo: 'Atego 1719'
           }
         };
       default:

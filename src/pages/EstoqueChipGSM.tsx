@@ -2,7 +2,7 @@
 
 import type React from "react"
 import { useState, useEffect } from "react"
-import { Search, Plus, Download, Trash2 } from "lucide-react"
+import { Search, Plus, Trash2 } from "lucide-react"
 import { chipGsmService, type ChipGSM } from "../services/chipGsmService"
 import { showSuccess, showError } from "../utils/toast"
 import ChipGsmModal from "../components/ChipGsmModal"
@@ -48,11 +48,6 @@ const EstoqueChipGSM: React.FC = () => {
     showSuccess('Chip GSM cadastrado com sucesso!')
   }
 
-  const handleExportar = () => {
-    // TODO: Implementar exportação
-    console.log("Exportar dados")
-  }
-
   const handleExcluir = async (chip: ChipGSM) => {
     if (window.confirm(`Tem certeza que deseja excluir o chip ${chip.numero}?`)) {
       try {
@@ -91,9 +86,6 @@ const EstoqueChipGSM: React.FC = () => {
             <button className="btn btn-secondary" onClick={handleNovo}>
               <Plus size={18} style={{ marginRight: '8px' }} />
               NOVO
-            </button>
-            <button className="btn btn-secondary" onClick={handleExportar}>
-              <Download size={18} />
             </button>
           </div>
         </div>

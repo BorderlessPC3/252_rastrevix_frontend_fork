@@ -4,6 +4,7 @@ import type React from "react"
 import { useState, useEffect } from "react"
 import { Pencil, Trash2 } from "lucide-react"
 import { rastreadorService } from "../services/rastreadorService"
+import { maquinaService } from "../services/maquinaService"
 import ImportExportButtons from "../components/ImportExportButtons"
 import { showSuccess, showError } from "../utils/toast"
 import type { Rastreador } from "../types"
@@ -35,6 +36,8 @@ const CadastroRastreador: React.FC = () => {
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false)
   const [rastreadorSelecionado, setRastreadorSelecionado] = useState<Rastreador | null>(null)
   const [rastreadorParaExcluir, setRastreadorParaExcluir] = useState<Rastreador | null>(null)
+  const [maquinasDisponiveis, setMaquinasDisponiveis] = useState<Array<{ id: string; codigo: string; nome: string; placa?: string }>>([])
+  const [maquinaId, setMaquinaId] = useState('')
   const [formData, setFormData] = useState<RastreadorFormData>({
     numeroSerial: '',
     imei: '',
@@ -74,6 +77,26 @@ const CadastroRastreador: React.FC = () => {
     carregarRastreadores()
   }, [])
 
+  const carregarMaquinasSemRastreador = async () => {
+    try {
+      const res = await maquinaService.listarMaquinas({ limit: 500 })
+      const lista = res.data.maquinas.filter(
+        (m) => !(m as { rastreadorId?: string }).rastreadorId
+      )
+      setMaquinasDisponiveis(
+        lista.map((m) => ({
+          id: m.id,
+          codigo: m.codigo,
+          nome: m.nome,
+          placa: (m as { placa?: string }).placa
+        }))
+      )
+    } catch {
+      setMaquinasDisponiveis([])
+      showError('Não foi possível carregar veículos para vínculo.')
+    }
+  }
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target
     const checked = (e.target as HTMLInputElement).checked
@@ -110,10 +133,17 @@ const CadastroRastreador: React.FC = () => {
         showSuccess(`Rastreador ${formData.nome || formData.numeroSerial} atualizado com sucesso!`)
         setIsEditarModalOpen(false)
       } else {
-        // Criar
-        await rastreadorService.criarRastreador(dadosParaEnvio)
-        showSuccess(`Rastreador ${formData.nome || formData.numeroSerial} cadastrado com sucesso!`)
+        if (!maquinaId) {
+          showError('Selecione o veículo ao qual o rastreador será vinculado.')
+          return
+        }
+        await rastreadorService.criarRastreador({
+          ...dadosParaEnvio,
+          maquinaId
+        } as Partial<Rastreador> & { maquinaId: string })
+        showSuccess(`Rastreador ${formData.nome || formData.numeroSerial} cadastrado e vinculado ao veículo!`)
         setIsModalOpen(false)
+        setMaquinaId('')
       }
 
       // Limpar formulário
@@ -214,6 +244,38 @@ const CadastroRastreador: React.FC = () => {
 
   const renderForm = () => (
     <form onSubmit={handleSubmit} className="rastreador-form">
+      {!rastreadorSelecionado && (
+        <div className="form-section">
+          <h3 className="form-section-title">🔗 Vínculo obrigatório</h3>
+          <p style={{ fontSize: '0.875rem', color: '#94a3b8', marginBottom: '0.75rem' }}>
+            Todo rastreador deve ser cadastrado já vinculado a um veículo (máquina) do cliente.
+          </p>
+          <div className="form-group">
+            <label htmlFor="maquinaId">
+              Veículo <span className="required">*</span>
+            </label>
+            <select
+              id="maquinaId"
+              value={maquinaId}
+              onChange={(e) => setMaquinaId(e.target.value)}
+              required
+              className="form-select"
+            >
+              <option value="">Selecione um veículo sem rastreador</option>
+              {maquinasDisponiveis.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.codigo} — {m.nome}{m.placa ? ` (${m.placa})` : ''}
+                </option>
+              ))}
+            </select>
+            {maquinasDisponiveis.length === 0 && (
+              <p style={{ fontSize: '0.8rem', color: '#f59e0b', marginTop: '0.5rem' }}>
+                Cadastre um veículo em Cadastro → Máquina antes de incluir o rastreador.
+              </p>
+            )}
+          </div>
+        </div>
+      )}
       {/* Seção: Informações Básicas do Rastreador */}
       <div className="form-section">
         <h3 className="form-section-title">📡 Informações Básicas do Rastreador</h3>
@@ -501,6 +563,8 @@ const CadastroRastreador: React.FC = () => {
                 tipoTransmissao: 'GPRS',
                 observacoes: ''
               })
+              setMaquinaId('')
+              void carregarMaquinasSemRastreador()
               setIsModalOpen(true)
             }}
           >

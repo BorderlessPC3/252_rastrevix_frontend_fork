@@ -1,9 +1,13 @@
 import React, { useState, useEffect } from 'react'
 import { chipGsmService, type ChipGSMCreateData } from '../services/chipGsmService'
+import { clienteService } from '../services/clienteService'
+import { fornecedorChipGsmService } from '../services/fornecedorChipGsmService'
+import { showError } from '../utils/toast'
 
 interface ChipGsmFormData {
   numero: string
   status: 'ativo' | 'inativo' | 'bloqueado'
+  clienteId: string
   operadora: string
   iccid: string
   fornecedorId: string
@@ -51,9 +55,11 @@ const PLANOS_GSM = [
 ]
 
 const ChipGsmModal: React.FC<ChipGsmModalProps> = ({ isOpen, onClose, onSave }) => {
+  const [clientes, setClientes] = useState<Array<{ id: string; nome: string; empresa: string }>>([])
   const [formData, setFormData] = useState<ChipGsmFormData>({
     numero: '',
     status: 'ativo',
+    clienteId: '',
     operadora: '',
     iccid: '',
     fornecedorId: '',
@@ -70,11 +76,26 @@ const ChipGsmModal: React.FC<ChipGsmModalProps> = ({ isOpen, onClose, onSave }) 
   const [isLoading, setIsLoading] = useState(false)
 
   useEffect(() => {
-    if (isOpen) {
-      // TODO: Carregar fornecedores quando tiver o serviço
-      // Por enquanto, usar lista vazia
-      setFornecedores([])
-    }
+    if (!isOpen) return
+    Promise.all([
+      clienteService.listarClientes({ limit: 500, status: 'ativo' }),
+      fornecedorChipGsmService.listarFornecedores({ limit: 200 })
+    ])
+      .then(([clientesRes, fornRes]) => {
+        setClientes(
+          clientesRes.data.clientes.map((c) => ({
+            id: c.id,
+            nome: c.nome,
+            empresa: c.empresa
+          }))
+        )
+        setFornecedores(fornRes.data.fornecedores)
+      })
+      .catch(() => {
+        setClientes([])
+        setFornecedores([])
+        showError('Não foi possível carregar clientes ou fornecedores.')
+      })
   }, [isOpen])
 
   const formatPhone = (value: string): string => {
@@ -112,6 +133,10 @@ const ChipGsmModal: React.FC<ChipGsmModalProps> = ({ isOpen, onClose, onSave }) 
 
   const validateForm = (): boolean => {
     const newErrors: Partial<Record<keyof ChipGsmFormData, string>> = {}
+
+    if (!formData.clienteId.trim()) {
+      newErrors.clienteId = 'Cliente é obrigatório'
+    }
 
     if (!formData.status.trim()) {
       newErrors.status = 'Status é obrigatório'
@@ -155,6 +180,7 @@ const ChipGsmModal: React.FC<ChipGsmModalProps> = ({ isOpen, onClose, onSave }) 
       const dataToSave: ChipGSMCreateData = {
         numero: formData.iccid.trim(), // ICCID é usado como número único
         status: formData.status,
+        clienteId: formData.clienteId,
         operadora: formData.operadora.trim() || undefined,
         telefone: formData.telefone.trim() || undefined,
         fornecedorId: formData.fornecedorId || undefined,
@@ -171,7 +197,9 @@ const ChipGsmModal: React.FC<ChipGsmModalProps> = ({ isOpen, onClose, onSave }) 
       handleClose()
     } catch (error) {
       console.error('Erro ao cadastrar chip GSM:', error)
-      setErrors({ iccid: 'Erro ao cadastrar chip GSM. Tente novamente.' })
+      const msg = error instanceof Error ? error.message : 'Erro ao cadastrar chip GSM.'
+      setErrors({ iccid: msg })
+      showError(msg)
     } finally {
       setIsLoading(false)
     }
@@ -181,6 +209,7 @@ const ChipGsmModal: React.FC<ChipGsmModalProps> = ({ isOpen, onClose, onSave }) 
     setFormData({
       numero: '',
       status: 'ativo',
+      clienteId: '',
       operadora: '',
       iccid: '',
       fornecedorId: '',
@@ -216,6 +245,25 @@ const ChipGsmModal: React.FC<ChipGsmModalProps> = ({ isOpen, onClose, onSave }) 
         <form onSubmit={handleSubmit} className="modal-form">
           <div style={{ marginBottom: '1.5rem' }}>
             <h3 style={{ marginBottom: '1rem', fontSize: '1rem', fontWeight: 600 }}>Dados</h3>
+
+            <div className="form-group">
+              <label htmlFor="clienteId">Cliente *</label>
+              <select
+                id="clienteId"
+                name="clienteId"
+                value={formData.clienteId}
+                onChange={handleInputChange}
+                className={errors.clienteId ? 'error' : ''}
+              >
+                <option value="">[ Selecione o Cliente ]</option>
+                {clientes.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.nome} — {c.empresa}
+                  </option>
+                ))}
+              </select>
+              {errors.clienteId && <span className="error-message">{errors.clienteId}</span>}
+            </div>
 
             <div className="form-group">
               <label htmlFor="status">Status *</label>

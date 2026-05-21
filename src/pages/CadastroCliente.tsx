@@ -2,12 +2,12 @@
 
 import type React from "react"
 import { useState, useEffect } from "react"
-import { useAuth } from "../contexts/AuthContext"
 import ClienteModal from "../components/ClienteModal"
 import ClienteDetalhesModal from "../components/ClienteDetalhesModal"
 import ClienteEditarModal from "../components/ClienteEditarModal"
 import ConfirmModal from "../components/ConfirmModal"
 import ImportExportButtons from "../components/ImportExportButtons"
+import { useAuth } from "../contexts/AuthContext"
 import { clienteService } from "../services/clienteService"
 import { showSuccess, showError, showWarning } from "../utils/toast"
 import "../styles/dashboard-pages.css"
@@ -51,6 +51,7 @@ interface ClienteCreateData {
 
 const CadastroCliente: React.FC = () => {
   const { user } = useAuth()
+  const isAdmin = user?.role === 'admin'
   const userName = user?.name || "Usuário"
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState<string>("todos")
@@ -534,6 +535,7 @@ const CadastroCliente: React.FC = () => {
               columns={getColumns()}
               onImport={handleImport}
             />
+            {isAdmin && (
             <button
               onClick={handleExcluirTodosClientes}
               className="btn-danger"
@@ -563,6 +565,7 @@ const CadastroCliente: React.FC = () => {
             >
               🗑️ Excluir Todos
             </button>
+            )}
           </div>
         </div>
       </div>
