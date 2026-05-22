@@ -230,7 +230,7 @@ const HistoricoRotas: React.FC = () => {
 
       <div className="historico-actions">
         <button type="button" className="btn-primary" onClick={carregarRota} disabled={loading}>
-          {loading ? "Carregando..." : "Carregar rota"}
+          {loading ? "Carregando…" : "Carregar rota"}
         </button>
         <button type="button" className="btn-secondary" onClick={iniciarReplay} disabled={replaying || pontos.length < 2}>
           Replay

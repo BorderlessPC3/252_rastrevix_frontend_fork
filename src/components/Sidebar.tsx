@@ -11,32 +11,18 @@ import {
   User,
   Cog,
   Users,
-  Settings,
-  HelpCircle,
   ChevronDown,
   ShoppingCart,
   Cpu,
   Building,
   FileText,
   History,
-  Clock,
   Truck,
   AlertCircle,
   Wrench,
-  Fuel,
-  FileWarning,
   Route,
-  DollarSign,
-  Package,
-  CheckSquare,
-  Link2,
-  MapPin,
-  Shield,
-  Timer,
-  Building2,
   TrendingUp,
   Car,
-  Square,
   Activity,
   Briefcase,
   RefreshCw
@@ -49,64 +35,46 @@ interface SidebarProps {
   onToggleCollapse: () => void;
 }
 
+const SUBMENU_ROUTE_PREFIX: Record<string, string> = {
+  Mapa: '/mapa',
+  Cadastro: '/cadastro',
+  Estoque: '/estoque',
+  Relatórios: '/relatorios',
+  Telemetria: '/telemetria',
+  Gerência: '/gerencia'
+};
+
+function buildSubmenuOpenState(pathname: string): Record<string, boolean> {
+  const next: Record<string, boolean> = {};
+  for (const [name, prefix] of Object.entries(SUBMENU_ROUTE_PREFIX)) {
+    next[name] = pathname.startsWith(prefix);
+  }
+  return next;
+}
+
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed, onToggleCollapse }) => {
   const location = useLocation();
   const { isAuthenticated, user, logout } = useAuth();
   const { branding } = useTheme();
-  const [isCadastroOpen, setIsCadastroOpen] = useState(location.pathname.startsWith('/cadastro'));
-  const [isEstoqueOpen, setIsEstoqueOpen] = useState(location.pathname.startsWith('/estoque'));
-  const [isRelatoriosOpen, setIsRelatoriosOpen] = useState(location.pathname.startsWith('/relatorios'));
-  const [isPerimetrosOpen, setIsPerimetrosOpen] = useState(location.pathname.startsWith('/perimetros'));
-  const [isTelemetriaOpen, setIsTelemetriaOpen] = useState(location.pathname.startsWith('/telemetria'));
-  const [isGerenciaOpen, setIsGerenciaOpen] = useState(location.pathname.startsWith('/gerencia'));
-  const [isMapaOpen, setIsMapaOpen] = useState(location.pathname.startsWith('/mapa'));
+  const [openSubmenus, setOpenSubmenus] = useState<Record<string, boolean>>(() =>
+    buildSubmenuOpenState(location.pathname)
+  );
 
   const handleLogout = () => {
     logout();
     window.location.href = '/login';
   };
 
-  const toggleCadastro = () => {
-    setIsCadastroOpen(!isCadastroOpen);
+  const toggleSubmenu = (name: string) => {
+    setOpenSubmenus((prev) => ({ ...prev, [name]: !prev[name] }));
   };
 
-  const toggleEstoque = () => {
-    setIsEstoqueOpen(!isEstoqueOpen);
-  };
-
-  const toggleRelatorios = () => {
-    setIsRelatoriosOpen(!isRelatoriosOpen);
-  };
-
-  const togglePerimetros = () => {
-    setIsPerimetrosOpen(!isPerimetrosOpen);
-  };
-
-  const toggleTelemetria = () => {
-    setIsTelemetriaOpen(!isTelemetriaOpen);
-  };
-
-  const toggleGerencia = () => {
-    setIsGerenciaOpen(!isGerenciaOpen);
-  };
-
-  const toggleMapa = () => {
-    setIsMapaOpen(!isMapaOpen);
-  };
-
-  // Abrir menu automaticamente quando estiver na rota correspondente
   useEffect(() => {
-    setIsCadastroOpen(location.pathname.startsWith('/cadastro'));
-    setIsEstoqueOpen(location.pathname.startsWith('/estoque'));
-    setIsRelatoriosOpen(location.pathname.startsWith('/relatorios'));
-    setIsPerimetrosOpen(location.pathname.startsWith('/perimetros'));
-    setIsTelemetriaOpen(location.pathname.startsWith('/telemetria'));
-    setIsGerenciaOpen(location.pathname.startsWith('/gerencia'));
-    setIsMapaOpen(location.pathname.startsWith('/mapa'));
+    setOpenSubmenus(buildSubmenuOpenState(location.pathname));
   }, [location.pathname]);
 
   const getIcon = (iconName: string, size: number = 20) => {
-    const iconProps = { size, className: "sidebar-icon" };
+    const iconProps = { size, className: 'sidebar-icon' };
 
     switch (iconName) {
       case 'home':
@@ -121,10 +89,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed, onToggl
         return <Cog {...iconProps} />;
       case 'users':
         return <Users {...iconProps} />;
-      case 'settings':
-        return <Settings {...iconProps} />;
-      case 'help':
-        return <HelpCircle {...iconProps} />;
       case 'shopping-cart':
         return <ShoppingCart {...iconProps} />;
       case 'cpu':
@@ -135,42 +99,18 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed, onToggl
         return <FileText {...iconProps} />;
       case 'history':
         return <History {...iconProps} />;
-      case 'clock':
-        return <Clock {...iconProps} />;
       case 'truck':
         return <Truck {...iconProps} />;
       case 'alert-circle':
         return <AlertCircle {...iconProps} />;
       case 'wrench':
         return <Wrench {...iconProps} />;
-      case 'fuel':
-        return <Fuel {...iconProps} />;
-      case 'file-warning':
-        return <FileWarning {...iconProps} />;
       case 'route':
         return <Route {...iconProps} />;
-      case 'dollar-sign':
-        return <DollarSign {...iconProps} />;
-      case 'package':
-        return <Package {...iconProps} />;
-      case 'check-square':
-        return <CheckSquare {...iconProps} />;
-      case 'link2':
-        return <Link2 {...iconProps} />;
-      case 'map-pin':
-        return <MapPin {...iconProps} />;
-      case 'shield':
-        return <Shield {...iconProps} />;
-      case 'timer':
-        return <Timer {...iconProps} />;
-      case 'building2':
-        return <Building2 {...iconProps} />;
       case 'trending-up':
         return <TrendingUp {...iconProps} />;
       case 'car':
         return <Car {...iconProps} />;
-      case 'square':
-        return <Square {...iconProps} />;
       case 'activity':
         return <Activity {...iconProps} />;
       case 'briefcase':
@@ -178,7 +118,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed, onToggl
       case 'refresh-cw':
         return <RefreshCw {...iconProps} />;
       default:
-        return <div className="sidebar-icon" style={{ width: size, height: size }}></div>;
+        return <div className="sidebar-icon" style={{ width: size, height: size }} />;
     }
   };
 
@@ -206,31 +146,22 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed, onToggl
 
   return (
     <>
-      {/* Overlay para mobile */}
-      {isOpen && (
-        <div
-          className="sidebar-overlay"
-          onClick={onClose}
-        />
-      )}
+      {isOpen && <div className="sidebar-overlay" onClick={onClose} />}
 
-      {/* Sidebar */}
       <div className={`sidebar ${isOpen ? 'sidebar-open' : ''} ${isCollapsed ? 'sidebar-collapsed' : ''}`}>
         <div className="sidebar-header">
           <div className="sidebar-logo">
             {branding?.logoUrl ? (
               <img src={branding.logoUrl} alt="" className="logo-img" style={{ height: 28 }} />
             ) : (
-              <span className="logo-icon"></span>
+              <span className="logo-icon" />
             )}
-            {!isCollapsed && (
-              <span className="logo-text">{branding?.name || 'Rastrevix'}</span>
-            )}
+            {!isCollapsed && <span className="logo-text">{branding?.name || 'Rastrevix'}</span>}
           </div>
           <button
             className="sidebar-collapse-btn"
             onClick={onToggleCollapse}
-            aria-label={isCollapsed ? "Expandir sidebar" : "Colapsar sidebar"}
+            aria-label={isCollapsed ? 'Expandir sidebar' : 'Colapsar sidebar'}
           >
             <span className={`collapse-icon ${isCollapsed ? 'collapsed' : ''}`}>‹</span>
           </button>
@@ -244,31 +175,26 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed, onToggl
                   <div className="sidebar-submenu">
                     <div
                       className="sidebar-link sidebar-submenu-header"
-                      onClick={
-                        item.name === 'Cadastro' ? toggleCadastro
-                          : item.name === 'Estoque' ? toggleEstoque
-                            : item.name === 'Relatórios' ? toggleRelatorios
-                              : item.name === 'Telemetria' ? toggleTelemetria
-                                : item.name === 'Perímetros' ? togglePerimetros
-                                  : item.name === 'Gerência' ? toggleGerencia
-                                    : item.name === 'Mapa' ? toggleMapa
-                                    : undefined
-                      }
+                      onClick={() => toggleSubmenu(item.name)}
                       style={{ cursor: 'pointer' }}
                       title={isCollapsed ? item.name : undefined}
                     >
                       {getIcon(item.icon)}
                       {!isCollapsed && <span className="sidebar-text">{item.name}</span>}
-                      {!isCollapsed && <ChevronDown size={16} className={`sidebar-arrow ${(item.name === 'Cadastro' && isCadastroOpen) || (item.name === 'Estoque' && isEstoqueOpen) || (item.name === 'Relatórios' && isRelatoriosOpen) || (item.name === 'Telemetria' && isTelemetriaOpen) || (item.name === 'Perímetros' && isPerimetrosOpen) || (item.name === 'Gerência' && isGerenciaOpen) || (item.name === 'Mapa' && isMapaOpen) ? 'open' : ''}`} />}
+                      {!isCollapsed && (
+                        <ChevronDown
+                          size={16}
+                          className={`sidebar-arrow ${openSubmenus[item.name] ? 'open' : ''}`}
+                        />
+                      )}
                     </div>
-                    {((item.name === 'Cadastro' && isCadastroOpen) || (item.name === 'Estoque' && isEstoqueOpen) || (item.name === 'Relatórios' && isRelatoriosOpen) || (item.name === 'Telemetria' && isTelemetriaOpen) || (item.name === 'Perímetros' && isPerimetrosOpen) || (item.name === 'Gerência' && isGerenciaOpen) || (item.name === 'Mapa' && isMapaOpen)) && (
+                    {openSubmenus[item.name] && (
                       <ul className="sidebar-submenu-list">
                         {item.submenu.map((subItem) => (
                           <li key={subItem.path} className="sidebar-subitem">
                             <Link
                               to={subItem.path!}
-                              className={`sidebar-sublink ${location.pathname === subItem.path ? 'active' : ''
-                                }`}
+                              className={`sidebar-sublink ${location.pathname === subItem.path ? 'active' : ''}`}
                               onClick={onClose}
                             >
                               {getIcon(subItem.icon, 16)}
@@ -282,8 +208,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed, onToggl
                 ) : (
                   <Link
                     to={item.path!}
-                    className={`sidebar-link ${location.pathname === item.path ? 'active' : ''
-                      }`}
+                    className={`sidebar-link ${location.pathname === item.path ? 'active' : ''}`}
                     onClick={onClose}
                     title={isCollapsed ? item.name : undefined}
                   >
@@ -299,35 +224,29 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed, onToggl
         <div className="sidebar-footer">
           {isAuthenticated ? (
             <div className="user-info">
-              <div className="user-avatar">
-                {user?.name?.charAt(0).toUpperCase() || 'U'}
-              </div>
+              <div className="user-avatar">{user?.name?.charAt(0).toUpperCase() || 'U'}</div>
               {!isCollapsed && (
                 <div className="user-details">
-                  <div className="user-name">
-                    {user?.name || 'Usuário'}
-                  </div>
-                  <div className="user-email">
-                    {user?.email || 'user@email.com'}
-                  </div>
+                  <div className="user-name">{user?.name || 'Usuário'}</div>
+                  <div className="user-email">{user?.email || ''}</div>
                 </div>
               )}
               <button
                 className="logout-btn"
                 onClick={handleLogout}
                 aria-label="Sair"
-                title={isCollapsed ? "Sair" : undefined}
+                title={isCollapsed ? 'Sair' : undefined}
               >
-                {!isCollapsed ? "Sair" : "↗"}
+                {!isCollapsed ? 'Sair' : '↗'}
               </button>
             </div>
           ) : (
             <div className="auth-buttons">
-              <Link to="/login" className="auth-link login-link">
-                {!isCollapsed ? "Entrar" : "→"}
+              <Link to="/login" className="auth-link login-link" onClick={onClose}>
+                {!isCollapsed ? 'Entrar' : '→'}
               </Link>
-              <Link to="/register" className="auth-link register-link">
-                {!isCollapsed ? "Cadastrar" : "+"}
+              <Link to="/register" className="auth-link register-link" onClick={onClose}>
+                {!isCollapsed ? 'Cadastrar' : '+'}
               </Link>
             </div>
           )}
@@ -338,4 +257,3 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed, onToggl
 };
 
 export default Sidebar;
-

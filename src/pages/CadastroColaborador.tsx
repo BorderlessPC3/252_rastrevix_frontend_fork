@@ -8,6 +8,9 @@ import ColaboradorDetalhesModal from "../components/ColaboradorDetalhesModal"
 import ColaboradorEditarModal from "../components/ColaboradorEditarModal"
 import ConfirmModal from "../components/ConfirmModal"
 import ImportExportButtons from "../components/ImportExportButtons"
+import PageFeedback from "../components/PageFeedback"
+import { useAuth } from "../contexts/AuthContext"
+import { canManageCadastros } from "../utils/rbac"
 import { colaboradorService } from "../services/colaboradorService"
 import { clienteService } from "../services/clienteService"
 import { showSuccess, showError, showWarning } from "../utils/toast"
@@ -102,6 +105,8 @@ interface ColaboradorCreateData {
 }
 
 const CadastroColaborador: React.FC = () => {
+  const { user } = useAuth()
+  const canManage = canManageCadastros(user?.role)
   // Estados para clientes
   const [clientes, setClientes] = useState<Cliente[]>([])
   const [clienteSelecionado, setClienteSelecionado] = useState<Cliente | null>(null)
@@ -360,9 +365,7 @@ const CadastroColaborador: React.FC = () => {
           </div>
           <div className="panel-list">
             {loadingClientes ? (
-              <div className="loading-state">
-                <p>Carregando clientes...</p>
-              </div>
+              <PageFeedback loading loadingMessage="Carregando clientes…" />
             ) : clientesFiltrados.length === 0 ? (
               <div className="no-results">
                 <p>Nenhum cliente encontrado.</p>
@@ -388,22 +391,24 @@ const CadastroColaborador: React.FC = () => {
         <div className="colaborador-right-panel">
           <div className="panel-header">
             <h3>Procurar Colaborador</h3>
-            <div className="panel-header-actions">
-              <button
-                className="btn-icon"
-                onClick={() => {
-                  if (!clienteSelecionado) {
-                    showWarning('Por favor, selecione um cliente antes de cadastrar um colaborador.')
-                    return
-                  }
-                  setIsModalOpen(true)
-                }}
-                title="Novo Colaborador"
-                disabled={!clienteSelecionado}
-              >
-                ➕
-              </button>
-            </div>
+            {canManage && (
+              <div className="panel-header-actions">
+                <button
+                  className="btn-icon"
+                  onClick={() => {
+                    if (!clienteSelecionado) {
+                      showWarning('Por favor, selecione um cliente antes de cadastrar um colaborador.')
+                      return
+                    }
+                    setIsModalOpen(true)
+                  }}
+                  title="Novo Colaborador"
+                  disabled={!clienteSelecionado}
+                >
+                  ➕
+                </button>
+              </div>
+            )}
           </div>
           <div className="panel-search">
             <input
@@ -420,9 +425,7 @@ const CadastroColaborador: React.FC = () => {
                 <p>Selecione um cliente para visualizar seus colaboradores</p>
               </div>
             ) : loadingColaboradores ? (
-              <div className="loading-state">
-                <p>Carregando colaboradores...</p>
-              </div>
+              <PageFeedback loading loadingMessage="Carregando colaboradores…" />
             ) : (
               <>
                 {/* Lista de Colaboradores do Cliente */}
@@ -439,22 +442,24 @@ const CadastroColaborador: React.FC = () => {
                             <span>Periférico: {colaborador.id.substring(0, 7)}</span>
                           </div>
                         </div>
-                        <div className="colaborador-list-item-actions">
-                          <button
-                            className="btn-icon"
-                            onClick={() => handleEditarColaborador(colaborador)}
-                            title="Editar colaborador"
-                          >
-                            <Pencil size={18} />
-                          </button>
-                          <button
-                            className="btn-icon-danger"
-                            onClick={() => handleRemoverColaborador(colaborador)}
-                            title="Remover colaborador"
-                          >
-                            <Trash2 size={18} />
-                          </button>
-                        </div>
+                        {canManage && (
+                          <div className="colaborador-list-item-actions">
+                            <button
+                              className="btn-icon"
+                              onClick={() => handleEditarColaborador(colaborador)}
+                              title="Editar colaborador"
+                            >
+                              <Pencil size={18} />
+                            </button>
+                            <button
+                              className="btn-icon-danger"
+                              onClick={() => handleRemoverColaborador(colaborador)}
+                              title="Remover colaborador"
+                            >
+                              <Trash2 size={18} />
+                            </button>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>

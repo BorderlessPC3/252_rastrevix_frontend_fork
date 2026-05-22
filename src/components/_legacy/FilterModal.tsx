@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import type { MaquinaFilters } from '../types';
+import type { MaquinaFilters } from '../../types';
 
 interface FilterModalProps {
     isOpen: boolean;

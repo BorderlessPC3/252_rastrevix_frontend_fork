@@ -7,7 +7,9 @@ import ClienteDetalhesModal from "../components/ClienteDetalhesModal"
 import ClienteEditarModal from "../components/ClienteEditarModal"
 import ConfirmModal from "../components/ConfirmModal"
 import ImportExportButtons from "../components/ImportExportButtons"
+import PageFeedback from "../components/PageFeedback"
 import { useAuth } from "../contexts/AuthContext"
+import { canAdministerTenant, canManageCadastros } from "../utils/rbac"
 import { clienteService } from "../services/clienteService"
 import { showSuccess, showError, showWarning } from "../utils/toast"
 import "../styles/dashboard-pages.css"
@@ -51,8 +53,8 @@ interface ClienteCreateData {
 
 const CadastroCliente: React.FC = () => {
   const { user } = useAuth()
-  const isAdmin = user?.role === 'admin'
-  const userName = user?.name || "Usuário"
+  const canManage = canManageCadastros(user?.role)
+  const isAdmin = canAdministerTenant(user?.role)
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState<string>("todos")
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -524,8 +526,8 @@ const CadastroCliente: React.FC = () => {
       <div className="dashboard-welcome">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
           <div>
-            <h2>Lista de Clientes, {userName}!</h2>
-            <p>Visualize e gerencie todos os clientes cadastrados</p>
+            <h2>CADASTRO · Cliente</h2>
+            <p>Visualize e gerencie os clientes cadastrados</p>
           </div>
           <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
             <ImportExportButtons
@@ -534,6 +536,7 @@ const CadastroCliente: React.FC = () => {
               title="Lista de Clientes"
               columns={getColumns()}
               onImport={handleImport}
+              importEnabled={canManage}
             />
             {isAdmin && (
             <button
@@ -636,31 +639,25 @@ const CadastroCliente: React.FC = () => {
       <div className="clientes-list-container">
         <div className="add-cliente-section">
           <h2>Clientes Cadastrados ({clientesFiltrados.length})</h2>
+          {canManage && (
           <button
             className="btn-add-cliente"
             onClick={() => setIsModalOpen(true)}
           >
             Adicionar Cliente
           </button>
+          )}
         </div>
         <div className="clientes-list">
-          {loading ? (
-            <div className="loading-state">
-              <p>Carregando clientes...</p>
-            </div>
-          ) : error ? (
-            <div className="error-state">
-              <p>{error}</p>
-              <button onClick={carregarClientes} className="btn btn-primary">
-                Tentar Novamente
-              </button>
-            </div>
-          ) : clientesFiltrados.length === 0 ? (
-            <div className="no-results">
-              <p>Nenhum cliente encontrado com os filtros aplicados.</p>
-            </div>
-          ) : (
-            clientesFiltrados.map((cliente) => (
+          <PageFeedback
+            loading={loading}
+            loadingMessage="Carregando clientes…"
+            error={error}
+            onRetry={carregarClientes}
+            empty={!loading && !error && clientesFiltrados.length === 0}
+            emptyMessage="Nenhum cliente encontrado com os filtros aplicados."
+          >
+            {clientesFiltrados.map((cliente) => (
               <div key={cliente.id} className="cliente-item">
                 <div className="cliente-info">
                   <div className="cliente-header">
@@ -693,19 +690,23 @@ const CadastroCliente: React.FC = () => {
                   </div>
                 </div>
                 <div className="cliente-actions">
-                  <button
-                    className="btn btn-primary"
-                    onClick={() => handleEditarCliente(cliente)}
-                  >
-                    Editar
-                  </button>
-                  <button
-                    className="btn btn-danger"
-                    onClick={() => handleExcluirCliente(cliente)}
-                    style={{ background: '#ff4757', color: '#fff' }}
-                  >
-                    Excluir
-                  </button>
+                  {canManage && (
+                    <>
+                      <button
+                        className="btn btn-primary"
+                        onClick={() => handleEditarCliente(cliente)}
+                      >
+                        Editar
+                      </button>
+                      <button
+                        className="btn btn-danger"
+                        onClick={() => handleExcluirCliente(cliente)}
+                        style={{ background: '#ff4757', color: '#fff' }}
+                      >
+                        Excluir
+                      </button>
+                    </>
+                  )}
                   <button
                     className="btn btn-secondary"
                     onClick={() => handleVerDetalhes(cliente)}
@@ -714,8 +715,8 @@ const CadastroCliente: React.FC = () => {
                   </button>
                 </div>
               </div>
-            ))
-          )}
+            ))}
+          </PageFeedback>
         </div>
       </div>
 

@@ -48,3 +48,19 @@ export function canSeeIntegracao(role?: string): boolean {
 export function canManageCadastros(role?: string): boolean {
   return hasMinimumRole(role, 'manager');
 }
+
+/** Admin da plataforma (sem tenant) ou admin de um tenant */
+export function canAdministerTenant(role?: string): boolean {
+  return normalizeRole(role) === 'admin';
+}
+
+export function isGlobalAdminUser(user?: {
+  role?: string;
+  tenantId?: string | null;
+}): boolean {
+  return normalizeRole(user?.role) === 'admin' && !user?.tenantId;
+}
+
+export function canImportData(role?: string): boolean {
+  return hasMinimumRole(role, 'manager');
+}

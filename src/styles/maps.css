@@ -147,6 +147,10 @@
   font-size: 0.9rem;
 }
 
+.maps-error-banner .page-feedback {
+  margin: 0.5rem 1rem;
+}
+
 .loading-cards,
 .no-vehicles {
   padding: 2rem;

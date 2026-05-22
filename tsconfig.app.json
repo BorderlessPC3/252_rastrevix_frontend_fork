@@ -24,5 +24,9 @@
     "noUncheckedSideEffectImports": true
   },
   "include": ["src"],
-  "exclude": ["src/pages/_legacy/**"]
+  "exclude": [
+    "src/pages/_legacy/**",
+    "src/components/_legacy/**",
+    "src/router/_legacy/**"
+  ]
 }

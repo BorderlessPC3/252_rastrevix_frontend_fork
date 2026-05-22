@@ -6,10 +6,15 @@ import { Search, Plus, Trash2 } from "lucide-react"
 import { chipGsmService, type ChipGSM } from "../services/chipGsmService"
 import { showSuccess, showError } from "../utils/toast"
 import ChipGsmModal from "../components/ChipGsmModal"
+import PageFeedback from "../components/PageFeedback"
+import { useAuth } from "../contexts/AuthContext"
+import { canManageCadastros } from "../utils/rbac"
 import "../styles/dashboard-pages.css"
 import "../styles/estoque.css"
 
 const EstoqueChipGSM: React.FC = () => {
+  const { user } = useAuth()
+  const canManage = canManageCadastros(user?.role)
   const [chips, setChips] = useState<ChipGSM[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [isLoading, setIsLoading] = useState(true)
@@ -82,23 +87,22 @@ const EstoqueChipGSM: React.FC = () => {
               }}
             />
           </div>
-          <div className="action-buttons-header">
-            <button className="btn btn-secondary" onClick={handleNovo}>
-              <Plus size={18} style={{ marginRight: '8px' }} />
-              NOVO
-            </button>
-          </div>
+          {canManage && (
+            <div className="action-buttons-header">
+              <button className="btn btn-secondary" onClick={handleNovo}>
+                <Plus size={18} style={{ marginRight: '8px' }} />
+                Novo
+              </button>
+            </div>
+          )}
         </div>
 
-        {isLoading ? (
-          <div className="loading-container">
-            <p>Carregando...</p>
-          </div>
-        ) : chips.length === 0 ? (
-          <div className="no-results">
-            <p>Nenhum chip GSM encontrado.</p>
-          </div>
-        ) : (
+        <PageFeedback
+          loading={isLoading}
+          loadingMessage="Carregando chips GSM…"
+          empty={!isLoading && chips.length === 0}
+          emptyMessage="Nenhum chip GSM encontrado."
+        >
           <div className="chip-gsm-table-container">
             <div className="chip-gsm-table">
               {chips.map((chip, index) => (
@@ -143,23 +147,25 @@ const EstoqueChipGSM: React.FC = () => {
                     <span className="chip-gsm-label">MATRIZ/FRANQUIA:</span>
                     <span className="chip-gsm-value">{chip.matrizFranquia || '---'}</span>
                   </div>
-                  <div className="chip-gsm-actions">
-                    <button
-                      className="btn-icon btn-icon-danger"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleExcluir(chip);
-                      }}
-                      title="Excluir"
-                    >
-                      <Trash2 size={18} />
-                    </button>
-                  </div>
+                  {canManage && (
+                    <div className="chip-gsm-actions">
+                      <button
+                        className="btn-icon btn-icon-danger"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleExcluir(chip);
+                        }}
+                        title="Excluir"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
           </div>
-        )}
+        </PageFeedback>
       </div>
 
       {/* Modal de Cadastro */}

@@ -1253,3 +1253,32 @@ a:focus-visible {
   outline: 2px solid var(--accent-primary);
   outline-offset: 2px;
 }
+
+/* Responsividade: tabelas e listas amplas */
+.table-container,
+.chip-gsm-table-container,
+.relatorio-table-scroll,
+.eventos-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  max-width: 100%;
+}
+
+.chip-gsm-row {
+  min-width: min(100%, 48rem);
+}
+
+@media (max-width: 768px) {
+  .sidebar:not(.sidebar-collapsed) {
+    width: min(280px, 92vw);
+  }
+
+  .data-table {
+    min-width: 36rem;
+  }
+
+  .chip-gsm-row {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+}

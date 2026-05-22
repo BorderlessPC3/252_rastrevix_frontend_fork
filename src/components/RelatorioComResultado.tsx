@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import PageFeedback from './PageFeedback';
 import RelatorioBase, { type RelatorioFormData } from './RelatorioBase';
 import { buildReportPayload } from '../utils/relatorioPayload';
 import { exportToPDF, exportToXLSX } from '../utils/exportUtils';
@@ -30,6 +31,7 @@ const RelatorioComResultado: React.FC<RelatorioComResultadoProps> = ({
   extraPayload
 }) => {
   const [loading, setLoading] = useState(false);
+  const [searched, setSearched] = useState(false);
   const [rows, setRows] = useState<Record<string, unknown>[]>([]);
   const [rawData, setRawData] = useState<unknown>(null);
 
@@ -46,8 +48,10 @@ const RelatorioComResultado: React.FC<RelatorioComResultadoProps> = ({
       setRawData(data);
       const mapped = mapRows(data);
       setRows(mapped);
+      setSearched(true);
       showSuccess(`${mapped.length} registro(s) no relatório`);
     } catch (e) {
+      setSearched(true);
       showError(e instanceof Error ? e.message : 'Erro ao gerar relatório');
     } finally {
       setLoading(false);
@@ -73,9 +77,15 @@ const RelatorioComResultado: React.FC<RelatorioComResultadoProps> = ({
         onPesquisar={handlePesquisar}
       />
 
-      {loading && <p className="relatorio-loading">Gerando relatório…</p>}
+      {loading && (
+        <PageFeedback loading loadingMessage="Gerando relatório…" />
+      )}
 
-      {rows.length > 0 && (
+      {!loading && searched && rows.length === 0 && (
+        <PageFeedback empty emptyMessage="Nenhum registro encontrado para os filtros informados." />
+      )}
+
+      {!loading && rows.length > 0 && (
         <div className="relatorio-resultado">
           <div className="relatorio-toolbar">
             <button type="button" className="btn-secondary" onClick={() => exportar('pdf')}>

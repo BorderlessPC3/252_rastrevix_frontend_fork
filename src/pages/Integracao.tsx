@@ -419,7 +419,7 @@ const Integracao: React.FC = () => {
     <div className="integracao-container">
       <div className="integracao-header">
         <div className="header-title-row">
-          <h1 className="integracao-title">Integrações</h1>
+          <h1 className="integracao-title">GERÊNCIA · Integração</h1>
           <button
             className="btn-help"
             onClick={() => setShowHelp(!showHelp)}

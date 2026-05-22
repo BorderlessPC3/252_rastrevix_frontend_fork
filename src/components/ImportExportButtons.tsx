@@ -2,6 +2,8 @@ import React, { useRef, useState } from 'react';
 import { Upload, FileText, FileCode, FileSpreadsheet } from 'lucide-react';
 import { exportToPDF, exportToXML, exportToXLSX, importFromXML, importFromXLSX, getDefaultColumns } from '../utils/exportUtils';
 import { showSuccess, showError } from '../utils/toast';
+import { useAuth } from '../contexts/AuthContext';
+import { canImportData } from '../utils/rbac';
 
 interface ImportExportButtonsProps {
   data: any[];
@@ -22,9 +24,11 @@ const ImportExportButtons: React.FC<ImportExportButtonsProps> = ({
   exportEnabled = true,
   importEnabled = true
 }) => {
+  const { user } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isExporting, setIsExporting] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
+  const allowImport = importEnabled && canImportData(user?.role);
 
   const handleExportPDF = async () => {
     if (data.length === 0) {
@@ -179,7 +183,7 @@ const ImportExportButtons: React.FC<ImportExportButtonsProps> = ({
         </div>
       )}
 
-      {importEnabled && onImport && (
+      {allowImport && onImport && (
         <div className="import-buttons">
           <input
             ref={fileInputRef}

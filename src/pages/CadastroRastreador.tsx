@@ -6,6 +6,9 @@ import { Pencil, Trash2 } from "lucide-react"
 import { rastreadorService } from "../services/rastreadorService"
 import { maquinaService } from "../services/maquinaService"
 import ImportExportButtons from "../components/ImportExportButtons"
+import PageFeedback from "../components/PageFeedback"
+import { useAuth } from "../contexts/AuthContext"
+import { canManageCadastros } from "../utils/rbac"
 import { showSuccess, showError } from "../utils/toast"
 import type { Rastreador } from "../types"
 import "../styles/dashboard-pages.css"
@@ -28,6 +31,8 @@ interface RastreadorFormData {
 }
 
 const CadastroRastreador: React.FC = () => {
+  const { user } = useAuth()
+  const canManage = canManageCadastros(user?.role)
   const [rastreadores, setRastreadores] = useState<Rastreador[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -521,7 +526,7 @@ const CadastroRastreador: React.FC = () => {
     <div className="dashboard-page">
       <div className="page-header">
         <div>
-          <h1>Cadastro de Rastreadores</h1>
+          <h1>CADASTRO · Rastreador</h1>
           <p>Gerencie os rastreadores veiculares do sistema</p>
         </div>
         <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
@@ -544,6 +549,7 @@ const CadastroRastreador: React.FC = () => {
               importEnabled={false}
             />
           )}
+          {canManage && (
           <button
             className="btn btn-primary"
             onClick={() => {
@@ -570,14 +576,18 @@ const CadastroRastreador: React.FC = () => {
           >
             + Novo Rastreador
           </button>
+          )}
         </div>
       </div>
 
-      {error && <div className="error-message">{error}</div>}
-
-      {loading ? (
-        <div className="loading">Carregando rastreadores...</div>
-      ) : (
+      <PageFeedback
+        loading={loading}
+        loadingMessage="Carregando rastreadores…"
+        error={error}
+        onRetry={carregarRastreadores}
+        empty={!loading && !error && rastreadores.length === 0}
+        emptyMessage='Nenhum rastreador cadastrado. Clique em "Novo Rastreador" para começar.'
+      >
         <div className="table-container">
           <table className="data-table">
             <thead>
@@ -595,14 +605,7 @@ const CadastroRastreador: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {rastreadores.length === 0 ? (
-                <tr>
-                  <td colSpan={10} className="empty-state">
-                    Nenhum rastreador cadastrado. Clique em "Novo Rastreador" para começar.
-                  </td>
-                </tr>
-              ) : (
-                rastreadores.map((rastreador) => (
+              {rastreadores.map((rastreador) => (
                   <tr key={rastreador.id}>
                     <td>{rastreador.numeroSerial}</td>
                     <td>{rastreador.imei}</td>
@@ -622,37 +625,40 @@ const CadastroRastreador: React.FC = () => {
                     <td>{rastreador.bloqueado ? '🔒 Sim' : '🔓 Não'}</td>
                     <td>{rastreador.tipoTransmissao || 'N/A'}</td>
                     <td>
-                      <div className="action-buttons">
-                        <button
-                          className="btn-icon"
-                          onClick={() => handleEditar(rastreador)}
-                          title="Editar"
-                        >
-                          <Pencil size={18} />
-                        </button>
-                        <button
-                          className="btn-icon btn-danger"
-                          onClick={() => handleExcluir(rastreador)}
-                          title="Excluir"
-                        >
-                          <Trash2 size={18} />
-                        </button>
-                      </div>
+                      {canManage ? (
+                        <div className="action-buttons">
+                          <button
+                            className="btn-icon"
+                            onClick={() => handleEditar(rastreador)}
+                            title="Editar"
+                          >
+                            <Pencil size={18} />
+                          </button>
+                          <button
+                            className="btn-icon btn-danger"
+                            onClick={() => handleExcluir(rastreador)}
+                            title="Excluir"
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                        </div>
+                      ) : (
+                        '—'
+                      )}
                     </td>
                   </tr>
-                ))
-              )}
+                ))}
             </tbody>
           </table>
         </div>
-      )}
+      </PageFeedback>
 
       {/* Modal de Cadastro */}
       {isModalOpen && (
         <div className="modal-overlay" onClick={() => setIsModalOpen(false)}>
           <div className="modal-content modal-large" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h2>📡 Novo Rastreador</h2>
+              <h2>Novo Rastreador</h2>
               <button className="modal-close" onClick={() => setIsModalOpen(false)}>×</button>
             </div>
             <div className="modal-body">

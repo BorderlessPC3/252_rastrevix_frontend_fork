@@ -274,7 +274,6 @@ const ChipGsmModal: React.FC<ChipGsmModalProps> = ({ isOpen, onClose, onSave }) 
                 onChange={handleInputChange}
                 className={errors.status ? 'error' : ''}
               >
-                <option value="">Selecione o status</option>
                 <option value="ativo">Ativo</option>
                 <option value="inativo">Inativo</option>
                 <option value="bloqueado">Bloqueado</option>
@@ -359,7 +358,7 @@ const ChipGsmModal: React.FC<ChipGsmModalProps> = ({ isOpen, onClose, onSave }) 
                 value={formData.telefone}
                 onChange={handleInputChange}
                 className={errors.telefone ? 'error' : ''}
-                placeholder="(  ) _ - _"
+                placeholder="(00) 00000-0000"
                 maxLength={15}
               />
               {errors.telefone && <span className="error-message">{errors.telefone}</span>}
@@ -415,13 +414,11 @@ const ChipGsmModal: React.FC<ChipGsmModalProps> = ({ isOpen, onClose, onSave }) 
           </div>
 
           <div className="modal-actions">
-            <button type="button" className="btn btn-danger" onClick={handleClose} disabled={isLoading}>
-              <span style={{ marginRight: '8px' }}>×</span>
-              CANCELAR
+            <button type="button" className="btn btn-secondary" onClick={handleClose} disabled={isLoading}>
+              Cancelar
             </button>
             <button type="submit" className="btn btn-primary" disabled={isLoading}>
-              <span style={{ marginRight: '8px' }}>+</span>
-              {isLoading ? 'CADASTRANDO...' : 'CADASTRAR'}
+              {isLoading ? 'Cadastrando…' : 'Cadastrar'}
             </button>
           </div>
         </form>

@@ -2,14 +2,19 @@
 
 import type React from "react"
 import { useState, useEffect } from "react"
-import { Search, Plus, Download, Trash2 } from "lucide-react"
+import { Search, Plus, Trash2 } from "lucide-react"
 import { fornecedorChipGsmService, type FornecedorChipGSM } from "../services/fornecedorChipGsmService"
 import { showSuccess, showError } from "../utils/toast"
 import FornecedorChipGSMModal from "../components/FornecedorChipGSMModal"
+import PageFeedback from "../components/PageFeedback"
+import { useAuth } from "../contexts/AuthContext"
+import { canManageCadastros } from "../utils/rbac"
 import "../styles/dashboard-pages.css"
 import "../styles/estoque.css"
 
 const EstoqueFornecedorChipGSM: React.FC = () => {
+  const { user } = useAuth()
+  const canManage = canManageCadastros(user?.role)
   const [fornecedores, setFornecedores] = useState<FornecedorChipGSM[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [isLoading, setIsLoading] = useState(true)
@@ -65,10 +70,6 @@ const EstoqueFornecedorChipGSM: React.FC = () => {
     }
   }
 
-  const handleExportar = () => {
-    console.log("Exportar dados")
-  }
-
   const handleExcluir = async (fornecedor: FornecedorChipGSM) => {
     if (window.confirm(`Tem certeza que deseja excluir o fornecedor ${fornecedor.nome}?`)) {
       try {
@@ -100,26 +101,22 @@ const EstoqueFornecedorChipGSM: React.FC = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          <div className="action-buttons-header">
-            <button className="btn btn-secondary" onClick={handleNovo}>
-              <Plus size={18} style={{ marginRight: '8px' }} />
-              NOVO
-            </button>
-            <button className="btn btn-secondary" onClick={handleExportar}>
-              <Download size={18} />
-            </button>
-          </div>
+          {canManage && (
+            <div className="action-buttons-header">
+              <button className="btn btn-secondary" onClick={handleNovo}>
+                <Plus size={18} style={{ marginRight: '8px' }} />
+                Novo
+              </button>
+            </div>
+          )}
         </div>
 
-        {isLoading ? (
-          <div className="loading-container">
-            <p>Carregando...</p>
-          </div>
-        ) : filteredFornecedores.length === 0 ? (
-          <div className="no-results">
-            <p>Nenhum fornecedor encontrado.</p>
-          </div>
-        ) : (
+        <PageFeedback
+          loading={isLoading}
+          loadingMessage="Carregando fornecedores…"
+          empty={!isLoading && filteredFornecedores.length === 0}
+          emptyMessage="Nenhum fornecedor encontrado."
+        >
           <div className="estoque-list">
             {filteredFornecedores.map((fornecedor, index) => (
               <div key={fornecedor.id} className="estoque-item">
@@ -143,19 +140,21 @@ const EstoqueFornecedorChipGSM: React.FC = () => {
                     </div>
                   </div>
                 </div>
-                <div className="estoque-item-actions">
-                  <button
-                    className="btn-icon btn-icon-danger"
-                    onClick={() => handleExcluir(fornecedor)}
-                    title="Excluir"
-                  >
-                    <Trash2 size={18} />
-                  </button>
-                </div>
+                {canManage && (
+                  <div className="estoque-item-actions">
+                    <button
+                      className="btn-icon btn-icon-danger"
+                      onClick={() => handleExcluir(fornecedor)}
+                      title="Excluir"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
+                )}
               </div>
             ))}
           </div>
-        )}
+        </PageFeedback>
       </div>
 
       <FornecedorChipGSMModal

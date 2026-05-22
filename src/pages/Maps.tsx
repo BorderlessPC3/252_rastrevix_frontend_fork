@@ -9,6 +9,7 @@ import { frotaService, type VeiculoFrota } from "../services/frotaService"
 import { socketService } from "../services/socketService"
 import { apiService } from "../services/api"
 import { Link } from "react-router-dom"
+import PageFeedback from "../components/PageFeedback"
 
 delete (L.Icon.Default.prototype as unknown as { _getIconUrl?: unknown })._getIconUrl
 L.Icon.Default.mergeOptions({
@@ -226,9 +227,9 @@ const Maps: React.FC = () => {
       <div className="vehicles-cards-container">
         <div className="vehicles-cards-scroll">
           {loading && veiculos.length === 0 ? (
-            <div className="loading-cards">Carregando veículos...</div>
+            <PageFeedback loading loadingMessage="Carregando veículos…" />
           ) : veiculos.length === 0 ? (
-            <div className="no-vehicles">Nenhum veículo com posição GPS</div>
+            <PageFeedback empty emptyMessage="Nenhum veículo com posição GPS no momento." />
           ) : (
             veiculos.map((v) => {
               const pos = v.posicaoAtual
@@ -276,7 +277,11 @@ const Maps: React.FC = () => {
           </button>
         </div>
       </div>
-      {error && <div className="error-message maps-error">{error}</div>}
+      {error && (
+        <div className="maps-error-banner">
+          <PageFeedback error={error} onRetry={() => void loadVeiculos()} />
+        </div>
+      )}
     </div>
   )
 }

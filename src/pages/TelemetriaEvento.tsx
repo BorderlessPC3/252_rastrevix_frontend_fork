@@ -6,6 +6,7 @@ import { EVENTOS_TELEMETRIA, type EventoRastreador } from '../types';
 import { exportToPDF, exportToXLSX } from '../utils/exportUtils';
 import { showError, showSuccess } from '../utils/toast';
 import { Search } from 'lucide-react';
+import PageFeedback from '../components/PageFeedback';
 import '../styles/dashboard-pages.css';
 
 const TelemetriaEvento: React.FC = () => {
@@ -155,7 +156,7 @@ const TelemetriaEvento: React.FC = () => {
               </div>
               <div className="form-group" style={{ alignSelf: 'end' }}>
                 <button type="button" className="btn-primary" onClick={carregarEventos} disabled={loading}>
-                  {loading ? 'Carregando...' : 'Carregar'}
+                  {loading ? 'Carregando…' : 'Carregar'}
                 </button>
               </div>
             </div>
@@ -169,8 +170,10 @@ const TelemetriaEvento: React.FC = () => {
           )}
 
           <div className="eventos-table-wrap">
-            {eventos.length === 0 ? (
-              <p className="info-message">Selecione um cliente e carregue os eventos.</p>
+            {loading ? (
+              <PageFeedback loading loadingMessage="Carregando eventos…" />
+            ) : eventos.length === 0 ? (
+              <PageFeedback empty emptyMessage="Selecione os filtros e clique em Carregar para ver os eventos." />
             ) : (
               <table className="data-table">
                 <thead>

@@ -8,6 +8,9 @@ import { rastreadorService } from "../services/rastreadorService"
 import type { Rastreador } from "../types"
 import { clienteService, type Cliente } from "../services/clienteService"
 import ImportExportButtons from "../components/ImportExportButtons"
+import PageFeedback from "../components/PageFeedback"
+import { useAuth } from "../contexts/AuthContext"
+import { canManageCadastros } from "../utils/rbac"
 import { showSuccess, showError } from "../utils/toast"
 import "../styles/dashboard-pages.css"
 import "../styles/import-export.css"
@@ -48,6 +51,8 @@ interface MaquinaFormData {
 }
 
 const CadastroMaquina: React.FC = () => {
+  const { user } = useAuth()
+  const canManage = canManageCadastros(user?.role)
 
   // Estados
   const [clientes, setClientes] = useState<Cliente[]>([])
@@ -288,7 +293,7 @@ const CadastroMaquina: React.FC = () => {
               importEnabled={false}
             />
           )}
-          {clienteSelecionado && (
+          {canManage && clienteSelecionado && (
             <button
               className="btn btn-primary"
               onClick={() => {
@@ -332,7 +337,7 @@ const CadastroMaquina: React.FC = () => {
 
           <div className="clientes-list">
             {loading ? (
-              <div className="loading">Carregando clientes...</div>
+              <PageFeedback loading loadingMessage="Carregando clientes…" />
             ) : clientesFiltrados.length === 0 ? (
               <div className="empty-state">Nenhum cliente encontrado</div>
             ) : (
@@ -377,7 +382,7 @@ const CadastroMaquina: React.FC = () => {
               </div>
 
               {loadingVeiculos ? (
-                <div className="loading">Carregando veículos...</div>
+                <PageFeedback loading loadingMessage="Carregando veículos…" />
               ) : veiculosFiltrados.length === 0 ? (
                 <div className="empty-state">
                   Nenhum veículo encontrado para {clienteSelecionado.nome}. Clique em "+ NOVO" para adicionar.

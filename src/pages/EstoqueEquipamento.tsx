@@ -2,12 +2,15 @@
 
 import type React from "react"
 import { useState, useEffect } from "react"
-import { Search, Plus, Download, Trash2, Pencil } from "lucide-react"
+import { Search, Plus, Trash2, Pencil } from "lucide-react"
 import { rastreadorService } from "../services/rastreadorService"
 import { showSuccess, showError } from "../utils/toast"
 import type { Rastreador } from "../types"
 import RastreadorEditarModal from "../components/RastreadorEditarModal"
 import RastreadorCriarModal from "../components/RastreadorCriarModal"
+import PageFeedback from "../components/PageFeedback"
+import { useAuth } from "../contexts/AuthContext"
+import { canManageCadastros } from "../utils/rbac"
 import "../styles/dashboard-pages.css"
 import "../styles/estoque.css"
 
@@ -50,6 +53,8 @@ const mapRastreadorToEquipamento = (rastreador: Rastreador): Equipamento => {
 }
 
 const EstoqueEquipamento: React.FC = () => {
+  const { user } = useAuth()
+  const canManage = canManageCadastros(user?.role)
   const [equipamentos, setEquipamentos] = useState<Equipamento[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [isLoading, setIsLoading] = useState(true)
@@ -99,10 +104,6 @@ const EstoqueEquipamento: React.FC = () => {
       console.error('Erro ao criar equipamento:', err)
       showError('Erro ao criar equipamento. Tente novamente.')
     }
-  }
-
-  const handleExportar = () => {
-    console.log("Exportar dados")
   }
 
   const handleEditar = (equip: Equipamento) => {
@@ -156,26 +157,22 @@ const EstoqueEquipamento: React.FC = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          <div className="action-buttons-header">
-            <button className="btn btn-secondary" onClick={handleNovo}>
-              <Plus size={18} style={{ marginRight: '8px' }} />
-              NOVO
-            </button>
-            <button className="btn btn-secondary" onClick={handleExportar}>
-              <Download size={18} />
-            </button>
-          </div>
+          {canManage && (
+            <div className="action-buttons-header">
+              <button className="btn btn-secondary" onClick={handleNovo}>
+                <Plus size={18} style={{ marginRight: '8px' }} />
+                Novo
+              </button>
+            </div>
+          )}
         </div>
 
-        {isLoading ? (
-          <div className="loading-container">
-            <p>Carregando...</p>
-          </div>
-        ) : filteredEquipamentos.length === 0 ? (
-          <div className="no-results">
-            <p>Nenhum equipamento encontrado.</p>
-          </div>
-        ) : (
+        <PageFeedback
+          loading={isLoading}
+          loadingMessage="Carregando equipamentos…"
+          empty={!isLoading && filteredEquipamentos.length === 0}
+          emptyMessage="Nenhum equipamento encontrado."
+        >
           <div className="estoque-list">
             {filteredEquipamentos.map((equip, index) => (
               <div key={equip.id} className="estoque-item">
@@ -223,27 +220,29 @@ const EstoqueEquipamento: React.FC = () => {
                     </div>
                   </div>
                 </div>
-                <div className="estoque-item-actions">
-                  <button
-                    className="btn-icon"
-                    onClick={() => handleEditar(equip)}
-                    title="Editar"
-                    style={{ marginRight: '8px' }}
-                  >
-                    <Pencil size={18} />
-                  </button>
-                  <button
-                    className="btn-icon btn-icon-danger"
-                    onClick={() => handleExcluir(equip)}
-                    title="Excluir"
-                  >
-                    <Trash2 size={18} />
-                  </button>
-                </div>
+                {canManage && (
+                  <div className="estoque-item-actions">
+                    <button
+                      className="btn-icon"
+                      onClick={() => handleEditar(equip)}
+                      title="Editar"
+                      style={{ marginRight: '8px' }}
+                    >
+                      <Pencil size={18} />
+                    </button>
+                    <button
+                      className="btn-icon btn-icon-danger"
+                      onClick={() => handleExcluir(equip)}
+                      title="Excluir"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
+                )}
               </div>
             ))}
           </div>
-        )}
+        </PageFeedback>
       </div>
 
       <RastreadorEditarModal
