@@ -23,8 +23,18 @@ export const showSuccess = (message: string, options?: any) => {
     });
 };
 
+const recentErrors = new Map<string, number>();
+const ERROR_DEDUPE_MS = 4000;
+
 // Toast de erro
 export const showError = (message: string, options?: any) => {
+    const now = Date.now();
+    const last = recentErrors.get(message);
+    if (last && now - last < ERROR_DEDUPE_MS) {
+        return;
+    }
+    recentErrors.set(message, now);
+
     toast.error(message, {
         ...defaultOptions,
         autoClose: options?.autoClose !== undefined ? options.autoClose : 5000, // Erros ficam mais tempo

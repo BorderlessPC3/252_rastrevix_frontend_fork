@@ -52,6 +52,16 @@ const log = (message: string, data?: unknown) => {
 };
 
 let refreshPromise: Promise<boolean> | null = null;
+let sessionInvalidationEmitted = false;
+
+function invalidateSession(message: string): never {
+  if (!sessionInvalidationEmitted) {
+    sessionInvalidationEmitted = true;
+    apiService.clearTokens();
+    window.dispatchEvent(new CustomEvent('auth:session-invalid', { detail: { message } }));
+  }
+  throw new Error(message);
+}
 
 class ApiService {
   private baseURL: string;
@@ -127,17 +137,8 @@ class ApiService {
     try {
       const response = await fetch(url, config);
 
-      if (response.status === 401 && !isRetryAfterRefresh && !endpoint.includes('/auth/refresh')) {
-        const refreshed = await this.tryRefreshToken();
-        if (refreshed) {
-          return this.request<T>(endpoint, options, retryCount, true);
-        }
-        this.clearTokens();
-        throw new Error('Sessão expirada. Faça login novamente.');
-      }
-
+      let errorData: ApiError | null = null;
       if (!response.ok) {
-        let errorData: ApiError;
         try {
           errorData = await response.json();
         } catch {
@@ -146,6 +147,21 @@ class ApiService {
             code: response.status.toString()
           };
         }
+      }
+
+      if (response.status === 401 && !isRetryAfterRefresh && !endpoint.includes('/auth/')) {
+        const refreshed = await this.tryRefreshToken();
+        if (refreshed) {
+          return this.request<T>(endpoint, options, retryCount, true);
+        }
+        const msg =
+          errorData?.code === 'ACCOUNT_INACTIVE'
+            ? 'Conta inativa. Entre em contato com o administrador.'
+            : errorData?.error || 'Sessão expirada. Faça login novamente.';
+        invalidateSession(msg);
+      }
+
+      if (!response.ok && errorData) {
 
         if (
           retryCount < this.retryAttempts &&
@@ -211,6 +227,7 @@ class ApiService {
   }
 
   setTokens(accessToken: string, refreshToken: string): void {
+    sessionInvalidationEmitted = false;
     localStorage.setItem('accessToken', accessToken);
     localStorage.setItem('refreshToken', refreshToken);
   }

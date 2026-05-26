@@ -47,6 +47,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   useEffect(() => {
+    const onSessionInvalid = (event: Event) => {
+      const detail = (event as CustomEvent<{ message?: string }>).detail;
+      setIsAuthenticated(false);
+      setUser(null);
+      setError(detail?.message || 'Sessão expirada. Faça login novamente.');
+      socketService.disconnect();
+    };
+
+    window.addEventListener('auth:session-invalid', onSessionInvalid);
+
     // Check authentication status on mount
     const checkAuth = async () => {
       const accessToken = apiService.getAccessToken();
@@ -107,6 +117,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     };
 
     checkAuth();
+
+    return () => {
+      window.removeEventListener('auth:session-invalid', onSessionInvalid);
+    };
   }, []);
 
   const login = async (credentials: LoginCredentials) => {
