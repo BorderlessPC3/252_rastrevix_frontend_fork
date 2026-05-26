@@ -1,4 +1,6 @@
 import { apiService } from './api';
+import { useFirebaseDirect } from '../config/firebase';
+import * as fb from '../firebase/entities';
 
 export interface FornecedorChipGSM {
   id: string;
@@ -46,14 +48,14 @@ export interface FornecedorChipGSMResponse {
 class FornecedorChipGsmService {
   private baseEndpoint = '/fornecedores-chip-gsm';
 
-  // Listar fornecedores com filtros e paginação
   async listarFornecedores(params?: {
     page?: number;
     limit?: number;
     search?: string;
   }): Promise<FornecedorChipGSMListResponse> {
-    const queryParams = new URLSearchParams();
+    if (useFirebaseDirect()) return fb.listarFornecedoresChipGsm(params);
 
+    const queryParams = new URLSearchParams();
     if (params?.page) queryParams.append('page', params.page.toString());
     if (params?.limit) queryParams.append('limit', params.limit.toString());
     if (params?.search) queryParams.append('search', params.search);
@@ -65,29 +67,29 @@ class FornecedorChipGsmService {
     return apiService.request<FornecedorChipGSMListResponse>(endpoint);
   }
 
-  // Obter fornecedor por ID
   async obterFornecedor(id: string): Promise<FornecedorChipGSMResponse> {
+    if (useFirebaseDirect()) return fb.obterFornecedorChipGsm(id);
     return apiService.request<FornecedorChipGSMResponse>(`${this.baseEndpoint}/${id}`);
   }
 
-  // Criar novo fornecedor
   async criarFornecedor(data: FornecedorChipGSMCreateData): Promise<FornecedorChipGSMResponse> {
+    if (useFirebaseDirect()) return fb.criarFornecedorChipGsm(data);
     return apiService.request<FornecedorChipGSMResponse>(this.baseEndpoint, {
       method: 'POST',
       body: JSON.stringify(data),
     });
   }
 
-  // Atualizar fornecedor
   async atualizarFornecedor(id: string, data: Partial<FornecedorChipGSMCreateData>): Promise<FornecedorChipGSMResponse> {
+    if (useFirebaseDirect()) return fb.atualizarFornecedorChipGsm(id, data);
     return apiService.request<FornecedorChipGSMResponse>(`${this.baseEndpoint}/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     });
   }
 
-  // Excluir fornecedor
   async excluirFornecedor(id: string): Promise<{ message: string }> {
+    if (useFirebaseDirect()) return fb.excluirFornecedorChipGsm(id);
     return apiService.request<{ message: string }>(`${this.baseEndpoint}/${id}`, {
       method: 'DELETE',
     });
@@ -95,3 +97,4 @@ class FornecedorChipGsmService {
 }
 
 export const fornecedorChipGsmService = new FornecedorChipGsmService();
+export default fornecedorChipGsmService;

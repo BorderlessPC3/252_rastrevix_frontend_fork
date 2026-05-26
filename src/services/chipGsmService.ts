@@ -1,4 +1,6 @@
 import { apiService } from './api';
+import { useFirebaseDirect } from '../config/firebase';
+import * as fb from '../firebase/entities';
 
 export interface ChipGSM {
   id: string;
@@ -69,7 +71,6 @@ export interface ChipGSMResponse {
 class ChipGsmService {
   private baseEndpoint = '/chips-gsm';
 
-  // Listar chips GSM com filtros e paginação
   async listarChipsGsm(params?: {
     page?: number;
     limit?: number;
@@ -77,8 +78,9 @@ class ChipGsmService {
     status?: string;
     operadora?: string;
   }): Promise<ChipGSMListResponse> {
-    const queryParams = new URLSearchParams();
+    if (useFirebaseDirect()) return fb.listarChipsGsm(params);
 
+    const queryParams = new URLSearchParams();
     if (params?.page) queryParams.append('page', params.page.toString());
     if (params?.limit) queryParams.append('limit', params.limit.toString());
     if (params?.search) queryParams.append('search', params.search);
@@ -92,29 +94,30 @@ class ChipGsmService {
     return apiService.request<ChipGSMListResponse>(endpoint);
   }
 
-  // Obter chip GSM por ID
   async obterChipGsm(id: string): Promise<ChipGSMResponse> {
+    if (useFirebaseDirect()) return fb.obterChipGsm(id);
     return apiService.request<ChipGSMResponse>(`${this.baseEndpoint}/${id}`);
   }
 
-  // Criar novo chip GSM
-  async criarChipGsm(data: ChipGSMCreateData): Promise<ChipGSMResponse> {
+  async criarChipGsm(dados: ChipGSMCreateData): Promise<ChipGSMResponse> {
+    if (useFirebaseDirect()) return fb.criarChipGsm(dados);
     return apiService.request<ChipGSMResponse>(this.baseEndpoint, {
       method: 'POST',
-      body: JSON.stringify(data),
+      body: JSON.stringify(dados),
     });
   }
 
-  // Atualizar chip GSM
-  async atualizarChipGsm(id: string, data: Partial<ChipGSMCreateData>): Promise<ChipGSMResponse> {
+  async atualizarChipGsm(dados: ChipGSMUpdateData): Promise<ChipGSMResponse> {
+    if (useFirebaseDirect()) return fb.atualizarChipGsm(dados);
+    const { id, ...updateData } = dados;
     return apiService.request<ChipGSMResponse>(`${this.baseEndpoint}/${id}`, {
       method: 'PUT',
-      body: JSON.stringify(data),
+      body: JSON.stringify(updateData),
     });
   }
 
-  // Excluir chip GSM
-  async excluirChipGsm(id: string): Promise<{ message: string }> {
+  async deletarChipGsm(id: string): Promise<{ message: string }> {
+    if (useFirebaseDirect()) return fb.deletarChipGsm(id);
     return apiService.request<{ message: string }>(`${this.baseEndpoint}/${id}`, {
       method: 'DELETE',
     });
@@ -122,3 +125,4 @@ class ChipGsmService {
 }
 
 export const chipGsmService = new ChipGsmService();
+export default chipGsmService;

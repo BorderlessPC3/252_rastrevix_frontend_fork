@@ -1,4 +1,7 @@
 import { apiService } from './api';
+import { useFirebaseDirect } from '../config/firebase';
+import { firebaseGetCurrentUser } from '../firebase/auth';
+import * as fb from '../firebase/entities';
 
 export interface TenantBranding {
   id: string;
@@ -12,6 +15,11 @@ export interface TenantBranding {
 
 class TenantService {
   async getBranding(): Promise<TenantBranding | null> {
+    if (useFirebaseDirect()) {
+      const user = await firebaseGetCurrentUser();
+      return fb.getTenantBranding(user?.tenantId);
+    }
+
     const res = await apiService.request<{
       message: string;
       data: { tenant: TenantBranding | null };

@@ -1,4 +1,6 @@
 import { apiService } from './api';
+import { useFirebaseDirect } from '../config/firebase';
+import * as fb from '../firebase/entities';
 
 export interface Cliente {
     id: string;
@@ -79,6 +81,7 @@ class ClienteService {
         search?: string;
         status?: string;
     }): Promise<ClienteListResponse> {
+        if (useFirebaseDirect()) return fb.listarClientes(params);
         const queryParams = new URLSearchParams();
 
         if (params?.page) queryParams.append('page', params.page.toString());
@@ -95,16 +98,19 @@ class ClienteService {
 
     // Obter estatísticas dos clientes
     async obterEstatisticas(): Promise<ClienteStatsResponse> {
+        if (useFirebaseDirect()) return fb.obterEstatisticasClientes();
         return apiService.request<ClienteStatsResponse>(`${this.baseEndpoint}/stats`);
     }
 
     // Obter cliente por ID
     async obterCliente(id: string): Promise<ClienteResponse> {
+        if (useFirebaseDirect()) return fb.obterCliente(id);
         return apiService.request<ClienteResponse>(`${this.baseEndpoint}/${id}`);
     }
 
     // Criar novo cliente
     async criarCliente(dados: ClienteCreateData): Promise<ClienteResponse> {
+        if (useFirebaseDirect()) return fb.criarCliente(dados);
         return apiService.request<ClienteResponse>(this.baseEndpoint, {
             method: 'POST',
             body: JSON.stringify(dados),
@@ -113,6 +119,7 @@ class ClienteService {
 
     // Atualizar cliente
     async atualizarCliente(dados: ClienteUpdateData): Promise<ClienteResponse> {
+        if (useFirebaseDirect()) return fb.atualizarCliente(dados);
         const { id, ...updateData } = dados;
         return apiService.request<ClienteResponse>(`${this.baseEndpoint}/${id}`, {
             method: 'PUT',
@@ -122,6 +129,7 @@ class ClienteService {
 
     // Deletar cliente
     async deletarCliente(id: string): Promise<{ message: string }> {
+        if (useFirebaseDirect()) return fb.deletarCliente(id);
         return apiService.request<{ message: string }>(`${this.baseEndpoint}/${id}`, {
             method: 'DELETE',
         });
@@ -129,6 +137,7 @@ class ClienteService {
 
     // Deletar TODOS os clientes (requer admin)
     async deletarTodosClientes(): Promise<{ message: string; data: { deletedCount: number } }> {
+        if (useFirebaseDirect()) return fb.deletarTodosClientes();
         return apiService.request<{ message: string; data: { deletedCount: number } }>(`${this.baseEndpoint}/all`, {
             method: 'DELETE',
             headers: { 'X-Confirm-Delete-All': 'true' }

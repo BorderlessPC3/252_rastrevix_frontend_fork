@@ -1,4 +1,6 @@
 import { apiService } from './api';
+import { useFirebaseDirect } from '../config/firebase';
+import * as fb from '../firebase/entities';
 
 export type ImportEntityType = 'clientes' | 'motoristas' | 'veiculos' | 'pontos';
 
@@ -21,6 +23,8 @@ class ImportApiService {
     rows: Record<string, unknown>[];
     idempotencyKey?: string;
   }) {
+    if (useFirebaseDirect()) return fb.batchImport(params);
+
     return apiService.request<{ message: string; data: { log: ImportLogResult } }>(
       '/import/batch',
       {
@@ -31,12 +35,16 @@ class ImportApiService {
   }
 
   async listLogs() {
+    if (useFirebaseDirect()) return fb.listImportLogs();
+
     return apiService.request<{ message: string; data: { logs: ImportLogResult[] } }>(
       '/import/logs'
     );
   }
 
   async getLog(id: string) {
+    if (useFirebaseDirect()) return fb.getImportLog(id);
+
     return apiService.request<{ message: string; data: { log: ImportLogResult } }>(
       `/import/logs/${id}`
     );

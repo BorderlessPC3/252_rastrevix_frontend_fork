@@ -1,4 +1,6 @@
 import { apiService } from './api';
+import { useFirebaseDirect } from '../config/firebase';
+import * as fb from '../firebase/entities';
 import type { DadosRastreador, EventoRastreador } from '../types';
 
 export interface RelatorioPeriodoPayload {
@@ -50,22 +52,27 @@ class ReportsService {
   }
 
   historico(payload: RelatorioPeriodoPayload) {
+    if (useFirebaseDirect()) return fb.relatorioHistorico(payload);
     return this.post<RelatorioHistoricoResult>('/historico', payload);
   }
 
   telemetria(payload: RelatorioPeriodoPayload & { eventoId?: number }) {
+    if (useFirebaseDirect()) return fb.relatorioTelemetria(payload);
     return this.post<RelatorioTelemetriaResult>('/telemetria', payload);
   }
 
   eventos(payload: RelatorioPeriodoPayload & { eventoId?: number }) {
+    if (useFirebaseDirect()) return fb.relatorioTelemetria(payload);
     return this.post<RelatorioTelemetriaResult>('/eventos', payload);
   }
 
   movimentacao(payload: RelatorioPeriodoPayload & { velocidadeMinima?: number }) {
+    if (useFirebaseDirect()) return fb.relatorioMovimentacao(payload);
     return this.post<RelatorioMovimentacaoResult>('/movimentacao', payload);
   }
 
   frota(payload: RelatorioPeriodoPayload) {
+    if (useFirebaseDirect()) return fb.relatorioFrota(payload);
     return this.post<{
       periodo: { dataInicio: string; dataFim: string };
       resumo: { total: number; ativas: number; comRastreador: number; distanciaTotalKm: number };
@@ -82,6 +89,7 @@ class ReportsService {
   }
 
   logistica(payload: RelatorioPeriodoPayload & { velocidadeMinima?: number }) {
+    if (useFirebaseDirect()) return fb.relatorioLogistica(payload);
     return this.post<{
       viagens: Array<{
         rastreadorId: string;
@@ -99,6 +107,7 @@ class ReportsService {
       consumoKmPorLitro?: number;
     }
   ) {
+    if (useFirebaseDirect()) return fb.relatorioFinanceiro(payload);
     return this.post<{
       custoTotal: number;
       linhas: Array<{
@@ -110,6 +119,7 @@ class ReportsService {
   }
 
   desempenho(payload: RelatorioPeriodoPayload) {
+    if (useFirebaseDirect()) return fb.relatorioDesempenho(payload);
     return this.post<{
       mediaEficiencia: number;
       distanciaTotalKm: number;
@@ -118,6 +128,7 @@ class ReportsService {
   }
 
   viagem(payload: RelatorioPeriodoPayload) {
+    if (useFirebaseDirect()) return fb.relatorioViagem(payload);
     return this.post<{
       viagens: Array<{
         rastreadorId: string;
@@ -131,6 +142,7 @@ class ReportsService {
   }
 
   manutencao(payload: RelatorioPeriodoPayload) {
+    if (useFirebaseDirect()) return fb.relatorioManutencao();
     return this.post<{
       itens: Array<{
         id: string;

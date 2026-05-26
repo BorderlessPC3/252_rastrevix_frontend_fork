@@ -1,4 +1,6 @@
 import { apiService } from './api';
+import { useFirebaseDirect } from '../config/firebase';
+import * as fb from '../firebase/entities';
 import type { DadosRastreador, Rastreador } from '../types';
 
 export interface VeiculoFrota {
@@ -36,6 +38,8 @@ class FrotaService {
     status?: string;
     search?: string;
   }): Promise<{ veiculos: VeiculoFrota[]; total: number }> {
+    if (useFirebaseDirect()) return fb.listarVeiculosFrota(params);
+
     const q = new URLSearchParams();
     if (params?.clienteId) q.append('clienteId', params.clienteId);
     if (params?.status) q.append('status', params.status);
@@ -50,6 +54,16 @@ class FrotaService {
   }
 
   async listarMapa(clienteId?: string): Promise<VeiculoFrota[]> {
+    if (useFirebaseDirect()) {
+      const { veiculos } = await fb.listarVeiculosFrota({
+        clienteId,
+        status: 'ativa'
+      });
+      return veiculos.filter(
+        (v) => v.posicaoAtual?.latitude != null && v.posicaoAtual?.longitude != null
+      );
+    }
+
     const q = clienteId ? `?clienteId=${clienteId}` : '';
     const res = await apiService.request<{
       message: string;
@@ -64,6 +78,8 @@ class FrotaService {
     dataFim: string,
     limit = 5000
   ): Promise<RotaResponse['data']> {
+    if (useFirebaseDirect()) return fb.obterRotaVeiculo(veiculoId, dataInicio, dataFim, limit);
+
     const q = new URLSearchParams({
       dataInicio,
       dataFim,

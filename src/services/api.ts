@@ -1,3 +1,14 @@
+import { useFirebaseDirect } from '../config/firebase';
+import {
+  firebaseGetAccessToken,
+  firebaseGetCurrentUser,
+  firebaseLogin,
+  firebaseLogout,
+  firebaseRefreshToken,
+  firebaseRegister,
+  firebaseTestConnection
+} from '../firebase/auth';
+
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api';
 
 export interface LoginCredentials {
@@ -109,6 +120,12 @@ class ApiService {
     retryCount = 0,
     isRetryAfterRefresh = false
   ): Promise<T> {
+    if (useFirebaseDirect()) {
+      throw new Error(
+        `Endpoint ${endpoint} ainda não disponível via Firestore direto. Use os services específicos.`
+      );
+    }
+
     const url = `${this.baseURL}${endpoint}`;
 
     const defaultHeaders: HeadersInit = {
@@ -195,6 +212,7 @@ class ApiService {
   }
 
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
+    if (useFirebaseDirect()) return firebaseLogin(credentials);
     return this.request<AuthResponse>('/auth/login', {
       method: 'POST',
       body: JSON.stringify(credentials)
@@ -202,6 +220,7 @@ class ApiService {
   }
 
   async register(data: RegisterData): Promise<AuthResponse> {
+    if (useFirebaseDirect()) return firebaseRegister(data);
     return this.request<AuthResponse>('/auth/register', {
       method: 'POST',
       body: JSON.stringify(data)
@@ -209,6 +228,11 @@ class ApiService {
   }
 
   async refreshToken(refreshToken: string): Promise<AuthResponse> {
+    if (useFirebaseDirect()) {
+      const res = await firebaseRefreshToken();
+      if (!res) throw new Error('Sessão expirada. Faça login novamente.');
+      return res;
+    }
     return this.request<AuthResponse>('/auth/refresh', {
       method: 'POST',
       body: JSON.stringify({ refreshToken })
@@ -216,6 +240,10 @@ class ApiService {
   }
 
   async logout(refreshToken?: string): Promise<{ message: string }> {
+    if (useFirebaseDirect()) {
+      await firebaseLogout();
+      return { message: 'Logout realizado' };
+    }
     return this.request<{ message: string }>('/auth/logout', {
       method: 'POST',
       body: JSON.stringify({ refreshToken })
@@ -223,13 +251,20 @@ class ApiService {
   }
 
   async getCurrentUser(): Promise<{ message: string; data: { user: AuthResponse['data']['user'] } }> {
+    if (useFirebaseDirect()) {
+      const user = await firebaseGetCurrentUser();
+      if (!user) throw new Error('Sessão expirada. Faça login novamente.');
+      return { message: 'OK', data: { user } };
+    }
     return this.request<{ message: string; data: { user: AuthResponse['data']['user'] } }>('/auth/me');
   }
 
   setTokens(accessToken: string, refreshToken: string): void {
     sessionInvalidationEmitted = false;
-    localStorage.setItem('accessToken', accessToken);
-    localStorage.setItem('refreshToken', refreshToken);
+    if (!useFirebaseDirect()) {
+      localStorage.setItem('accessToken', accessToken);
+      localStorage.setItem('refreshToken', refreshToken);
+    }
   }
 
   clearTokens(): void {
@@ -238,10 +273,17 @@ class ApiService {
   }
 
   getAccessToken(): string | null {
+    if (useFirebaseDirect()) return null;
     return localStorage.getItem('accessToken');
   }
 
+  async getAccessTokenAsync(): Promise<string | null> {
+    if (useFirebaseDirect()) return firebaseGetAccessToken();
+    return this.getAccessToken();
+  }
+
   getRefreshToken(): string | null {
+    if (useFirebaseDirect()) return 'firebase';
     return localStorage.getItem('refreshToken');
   }
 
@@ -255,6 +297,7 @@ class ApiService {
   }
 
   async testConnection(): Promise<boolean> {
+    if (useFirebaseDirect()) return firebaseTestConnection();
     try {
       const healthUrl = this.baseURL.replace('/api', '') + '/health';
       const response = await fetch(healthUrl, {

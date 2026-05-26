@@ -1,4 +1,6 @@
 import { apiService } from './api';
+import { useFirebaseDirect } from '../config/firebase';
+import * as fb from '../firebase/entities';
 
 export interface Maquina {
     id: string;
@@ -115,6 +117,7 @@ class MaquinaService {
         tipo?: string;
         clienteId?: string;
     }): Promise<MaquinaListResponse> {
+        if (useFirebaseDirect()) return fb.listarMaquinas(params);
         const queryParams = new URLSearchParams();
 
         if (params?.page) queryParams.append('page', params.page.toString());
@@ -133,16 +136,19 @@ class MaquinaService {
 
     // Obter estatísticas das máquinas
     async obterEstatisticas(): Promise<MaquinaStatsResponse> {
+        if (useFirebaseDirect()) return fb.obterEstatisticasMaquinas();
         return apiService.request<MaquinaStatsResponse>(`${this.baseEndpoint}/stats`);
     }
 
     // Obter máquina por ID
     async obterMaquina(id: string): Promise<MaquinaResponse> {
+        if (useFirebaseDirect()) return fb.obterMaquina(id);
         return apiService.request<MaquinaResponse>(`${this.baseEndpoint}/${id}`);
     }
 
     // Criar nova máquina
     async criarMaquina(dados: MaquinaCreateData): Promise<MaquinaResponse> {
+        if (useFirebaseDirect()) return fb.criarMaquina(dados);
         return apiService.request<MaquinaResponse>(this.baseEndpoint, {
             method: 'POST',
             body: JSON.stringify(dados),
@@ -151,6 +157,7 @@ class MaquinaService {
 
     // Atualizar máquina
     async atualizarMaquina(dados: MaquinaUpdateData): Promise<MaquinaResponse> {
+        if (useFirebaseDirect()) return fb.atualizarMaquina(dados);
         const { id, ...updateData } = dados;
         return apiService.request<MaquinaResponse>(`${this.baseEndpoint}/${id}`, {
             method: 'PUT',
@@ -160,6 +167,7 @@ class MaquinaService {
 
     // Deletar máquina
     async deletarMaquina(id: string): Promise<{ message: string }> {
+        if (useFirebaseDirect()) return fb.deletarMaquina(id);
         return apiService.request<{ message: string }>(`${this.baseEndpoint}/${id}`, {
             method: 'DELETE',
         });

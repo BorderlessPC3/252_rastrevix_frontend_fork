@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import { apiService, type LoginCredentials, type RegisterData } from '../services/api';
 import { socketService } from '../services/socketService';
+import { useFirebaseDirect } from '../config/firebase';
+import { watchAuthState } from '../firebase/auth';
 
 interface User {
   id: string;
@@ -38,9 +40,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const connectRealtime = (accessToken: string) => {
+  const connectRealtime = async (accessToken?: string) => {
     try {
-      socketService.connect(accessToken);
+      const token = accessToken || (await apiService.getAccessTokenAsync()) || undefined;
+      if (token) socketService.connect(token);
     } catch (err) {
       console.warn('WebSocket não conectado:', err);
     }
@@ -57,7 +60,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     window.addEventListener('auth:session-invalid', onSessionInvalid);
 
-    // Check authentication status on mount
+    if (useFirebaseDirect()) {
+      const unsubscribe = watchAuthState((profile) => {
+        if (profile && profile.status === 'active') {
+          setIsAuthenticated(true);
+          setUser(profile);
+          void connectRealtime();
+        } else {
+          setIsAuthenticated(false);
+          setUser(null);
+          socketService.disconnect();
+        }
+        setLoading(false);
+      });
+      return () => {
+        window.removeEventListener('auth:session-invalid', onSessionInvalid);
+        unsubscribe();
+      };
+    }
+
+    // Check authentication status on mount (modo API/JWT)
     const checkAuth = async () => {
       const accessToken = apiService.getAccessToken();
       const refreshToken = apiService.getRefreshToken();
@@ -67,7 +89,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           const response = await apiService.getCurrentUser();
           setIsAuthenticated(true);
           setUser(response.data.user);
-          connectRealtime(accessToken);
+          void connectRealtime(accessToken);
         } catch (error) {
           console.error('Error validating token:', error);
           // Try to refresh token if we have one
@@ -77,7 +99,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
               apiService.setTokens(refreshResponse.data.accessToken, refreshResponse.data.refreshToken);
               setIsAuthenticated(true);
               setUser(refreshResponse.data.user);
-              connectRealtime(refreshResponse.data.accessToken);
+              void connectRealtime(refreshResponse.data.accessToken);
             } catch (refreshError) {
               console.error('Error refreshing token:', refreshError);
               apiService.clearTokens();
@@ -97,7 +119,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           apiService.setTokens(refreshResponse.data.accessToken, refreshResponse.data.refreshToken);
           setIsAuthenticated(true);
           setUser(refreshResponse.data.user);
-          connectRealtime(refreshResponse.data.accessToken);
+          void connectRealtime(refreshResponse.data.accessToken);
         } catch (error) {
           console.error('Error refreshing token:', error);
           apiService.clearTokens();
@@ -136,7 +158,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // Update state
       setIsAuthenticated(true);
       setUser(response.data.user);
-      connectRealtime(response.data.accessToken);
+      void connectRealtime(response.data.accessToken);
     } catch (error) {
       let errorMessage = 'Erro no login';
       

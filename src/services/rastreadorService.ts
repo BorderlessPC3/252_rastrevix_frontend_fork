@@ -1,4 +1,6 @@
 import { apiService } from './api';
+import { useFirebaseDirect } from '../config/firebase';
+import * as fb from '../firebase/entities';
 import type {
     Rastreador,
     RastreadorComPosicao,
@@ -11,15 +13,15 @@ import type {
 class RastreadorService {
     private baseEndpoint = '/rastreadores';
 
-    // Listar rastreadores com filtros e paginação
     async listarRastreadores(params?: {
         page?: number;
         limit?: number;
         search?: string;
         status?: string;
     }): Promise<RastreadorListResponse> {
-        const queryParams = new URLSearchParams();
+        if (useFirebaseDirect()) return fb.listarRastreadores(params) as Promise<RastreadorListResponse>;
 
+        const queryParams = new URLSearchParams();
         if (params?.page) queryParams.append('page', params.page.toString());
         if (params?.limit) queryParams.append('limit', params.limit.toString());
         if (params?.search) queryParams.append('search', params.search);
@@ -32,25 +34,25 @@ class RastreadorService {
         return apiService.request<RastreadorListResponse>(endpoint);
     }
 
-    // Obter rastreador por ID
     async obterRastreador(id: string): Promise<{ message: string; data: { rastreador: Rastreador } }> {
+        if (useFirebaseDirect()) return fb.obterRastreador(id) as Promise<{ message: string; data: { rastreador: Rastreador } }>;
         return apiService.request<{ message: string; data: { rastreador: Rastreador } }>(`${this.baseEndpoint}/${id}`);
     }
 
-    // Obter posição atual de um rastreador
     async obterPosicaoAtual(id: string): Promise<RastreadorPosicaoResponse> {
+        if (useFirebaseDirect()) return fb.obterPosicaoAtual(id) as Promise<RastreadorPosicaoResponse>;
         return apiService.request<RastreadorPosicaoResponse>(`${this.baseEndpoint}/${id}/posicao-atual`);
     }
 
-    // Obter dados históricos de um rastreador
     async obterDados(id: string, params?: {
         page?: number;
         limit?: number;
         dataInicio?: string;
         dataFim?: string;
     }): Promise<RastreadorDadosResponse> {
-        const queryParams = new URLSearchParams();
+        if (useFirebaseDirect()) return fb.obterDadosRastreador(id, params) as Promise<RastreadorDadosResponse>;
 
+        const queryParams = new URLSearchParams();
         if (params?.page) queryParams.append('page', params.page.toString());
         if (params?.limit) queryParams.append('limit', params.limit.toString());
         if (params?.dataInicio) queryParams.append('dataInicio', params.dataInicio);
@@ -63,18 +65,15 @@ class RastreadorService {
         return apiService.request<RastreadorDadosResponse>(endpoint);
     }
 
-    // Listar todos os rastreadores com suas posições atuais (para o mapa)
     async listarRastreadoresComPosicoes(): Promise<RastreadorComPosicao[]> {
         try {
-            // Buscar todos os rastreadores ativos
             const response = await this.listarRastreadores({
-                limit: 1000, // Limite alto para pegar todos
+                limit: 1000,
                 status: 'ativo'
             });
 
             const rastreadores = response.data.rastreadores;
 
-            // Buscar posição atual de cada rastreador
             const rastreadoresComPosicoes = await Promise.allSettled(
                 rastreadores.map(async (rastreador) => {
                     try {
@@ -83,8 +82,7 @@ class RastreadorService {
                             ...rastreador,
                             posicaoAtual: posicaoResponse.data.posicao
                         } as RastreadorComPosicao;
-                    } catch (error) {
-                        // Se não houver posição, retorna o rastreador sem posição
+                    } catch {
                         return {
                             ...rastreador,
                             posicaoAtual: undefined
@@ -108,30 +106,29 @@ class RastreadorService {
         }
     }
 
-    // Criar novo rastreador
     async criarRastreador(dados: Partial<Rastreador>): Promise<{ message: string; data: { rastreador: Rastreador } }> {
+        if (useFirebaseDirect()) return fb.criarRastreador(dados) as Promise<{ message: string; data: { rastreador: Rastreador } }>;
         return apiService.request<{ message: string; data: { rastreador: Rastreador } }>(this.baseEndpoint, {
             method: 'POST',
             body: JSON.stringify(dados),
         });
     }
 
-    // Atualizar rastreador
     async atualizarRastreador(id: string, dados: Partial<Rastreador>): Promise<{ message: string; data: { rastreador: Rastreador } }> {
+        if (useFirebaseDirect()) return fb.atualizarRastreador(id, dados) as Promise<{ message: string; data: { rastreador: Rastreador } }>;
         return apiService.request<{ message: string; data: { rastreador: Rastreador } }>(`${this.baseEndpoint}/${id}`, {
             method: 'PUT',
             body: JSON.stringify(dados),
         });
     }
 
-    // Deletar rastreador
     async deletarRastreador(id: string): Promise<{ message: string }> {
+        if (useFirebaseDirect()) return fb.deletarRastreador(id);
         return apiService.request<{ message: string }>(`${this.baseEndpoint}/${id}`, {
             method: 'DELETE',
         });
     }
 
-    // Obter eventos de um rastreador
     async obterEventos(id: string, params?: {
         page?: number;
         limit?: number;
@@ -139,8 +136,9 @@ class RastreadorService {
         dataFim?: string;
         eventoId?: number;
     }): Promise<RastreadorEventosResponse> {
-        const queryParams = new URLSearchParams();
+        if (useFirebaseDirect()) return fb.obterEventosRastreador(id, params) as Promise<RastreadorEventosResponse>;
 
+        const queryParams = new URLSearchParams();
         if (params?.page) queryParams.append('page', params.page.toString());
         if (params?.limit) queryParams.append('limit', params.limit.toString());
         if (params?.dataInicio) queryParams.append('dataInicio', params.dataInicio);
