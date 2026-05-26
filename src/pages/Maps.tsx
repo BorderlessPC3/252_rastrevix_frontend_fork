@@ -8,6 +8,7 @@ import "../styles/maps.css"
 import { frotaService, type VeiculoFrota } from "../services/frotaService"
 import { socketService } from "../services/socketService"
 import { apiService } from "../services/api"
+import { useFirebaseDirect } from "../config/firebase"
 import { Link } from "react-router-dom"
 import PageFeedback from "../components/PageFeedback"
 
@@ -153,32 +154,52 @@ const Maps: React.FC = () => {
   }, [veiculos, selectedId, syncMarkers])
 
   useEffect(() => {
-    const token = apiService.getAccessToken()
-    if (!token) return
+    let cancelled = false
 
-    const socket = socketService.connect(token)
-    socketService.subscribeAll()
+    const setupRealtime = async () => {
+      const token = (await apiService.getAccessTokenAsync()) || apiService.getAccessToken()
+      if (!token || cancelled) return
 
-    const onConnect = () => setWsConnected(true)
-    const onDisconnect = () => setWsConnected(false)
-    socket.on("connect", onConnect)
-    socket.on("disconnect", onDisconnect)
-    if (socket.connected) setWsConnected(true)
+      const socket = socketService.connect(token)
+      socketService.subscribeAll()
 
-    const unsubPos = socketService.onPosicaoAtualizada(({ rastreadorId, posicao }) => {
-      applyPosicaoUpdate(rastreadorId, posicao)
-    })
+      const onConnect = () => setWsConnected(true)
+      const onDisconnect = () => setWsConnected(false)
+      if (socket) {
+        socket.on("connect", onConnect)
+        socket.on("disconnect", onDisconnect)
+        if (socket.connected) setWsConnected(true)
+      } else if (useFirebaseDirect()) {
+        setWsConnected(socketService.isConnected())
+      }
 
-    const unsubEvt = socketService.onEventoNovo(({ rastreadorId, evento }) => {
-      const label = `${evento.eventoNome || evento.eventoId} — ${rastreadorId.slice(0, 8)}`
-      setEventosRecentes((prev) => [label, ...prev].slice(0, 8))
+      const unsubPos = socketService.onPosicaoAtualizada(({ rastreadorId, posicao }) => {
+        applyPosicaoUpdate(rastreadorId, posicao)
+      })
+
+      const unsubEvt = socketService.onEventoNovo(({ rastreadorId, evento }) => {
+        const label = `${evento.eventoNome || evento.eventoId} — ${rastreadorId.slice(0, 8)}`
+        setEventosRecentes((prev) => [label, ...prev].slice(0, 8))
+      })
+
+      return () => {
+        if (socket) {
+          socket.off("connect", onConnect)
+          socket.off("disconnect", onDisconnect)
+        }
+        unsubPos()
+        unsubEvt()
+      }
+    }
+
+    let cleanup: (() => void) | undefined
+    void setupRealtime().then((fn) => {
+      cleanup = fn
     })
 
     return () => {
-      socket.off("connect", onConnect)
-      socket.off("disconnect", onDisconnect)
-      unsubPos()
-      unsubEvt()
+      cancelled = true
+      cleanup?.()
     }
   }, [applyPosicaoUpdate])
 

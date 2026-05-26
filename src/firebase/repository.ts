@@ -13,7 +13,11 @@ import type { CollectionName } from './collections';
 import { docToRecord, newId, stripUndefined, toIso } from './helpers';
 
 export class FirestoreRepo {
-  constructor(private readonly name: CollectionName) {}
+  private readonly name: CollectionName;
+
+  constructor(name: CollectionName) {
+    this.name = name;
+  }
 
   private col() {
     return collection(getDb(), this.name);

@@ -218,9 +218,9 @@ export function watchAuthState(onUser: (user: AppUser | null) => void): () => vo
 
 export async function firebaseUpdateProfile(
   userId: string,
-  data: Record<string, unknown>
+  data: Record<string, unknown> | { name?: string; phone?: string; company?: string; position?: string; department?: string }
 ): Promise<AppUser> {
-  const updated = await usersRepo.update(userId, data);
+  const updated = await usersRepo.update(userId, data as Record<string, unknown>);
   return mapUser(updated);
 }
 

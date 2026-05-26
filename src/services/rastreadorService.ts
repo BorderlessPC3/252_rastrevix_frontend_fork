@@ -50,7 +50,9 @@ class RastreadorService {
         dataInicio?: string;
         dataFim?: string;
     }): Promise<RastreadorDadosResponse> {
-        if (useFirebaseDirect()) return fb.obterDadosRastreador(id, params) as Promise<RastreadorDadosResponse>;
+        if (useFirebaseDirect()) {
+            return fb.obterDadosRastreador(id, params) as unknown as Promise<RastreadorDadosResponse>;
+        }
 
         const queryParams = new URLSearchParams();
         if (params?.page) queryParams.append('page', params.page.toString());
@@ -136,7 +138,9 @@ class RastreadorService {
         dataFim?: string;
         eventoId?: number;
     }): Promise<RastreadorEventosResponse> {
-        if (useFirebaseDirect()) return fb.obterEventosRastreador(id, params) as Promise<RastreadorEventosResponse>;
+        if (useFirebaseDirect()) {
+            return fb.obterEventosRastreador(id, params) as unknown as Promise<RastreadorEventosResponse>;
+        }
 
         const queryParams = new URLSearchParams();
         if (params?.page) queryParams.append('page', params.page.toString());

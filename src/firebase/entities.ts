@@ -373,7 +373,18 @@ export async function obterDadosRastreador(
   }
   rows.sort((a, b) => (toDate(a.timestamp)?.getTime() || 0) - (toDate(b.timestamp)?.getTime() || 0));
   const paged = paginate(rows.map(asDados), params?.page, params?.limit);
-  return { message: 'OK', data: { dados: paged.items, pagination: paged } };
+  const rastreadorRow = await rastreadoresRepo.getById(id);
+  const rastreador = rastreadorRow
+    ? asRastreador(rastreadorRow)
+    : ({ id, numeroSerial: '', imei: '', status: 'ativo' } as Rastreador);
+  return {
+    message: 'OK',
+    data: {
+      rastreador,
+      dados: paged.items,
+      pagination: { page: paged.page, limit: paged.limit, total: paged.total, pages: paged.pages }
+    }
+  };
 }
 
 export async function obterEventosRastreador(
@@ -392,7 +403,18 @@ export async function obterEventosRastreador(
   }
   rows.sort((a, b) => (toDate(b.timestamp)?.getTime() || 0) - (toDate(a.timestamp)?.getTime() || 0));
   const paged = paginate(rows.map(asEvento), params?.page, params?.limit);
-  return { message: 'OK', data: { eventos: paged.items, pagination: paged } };
+  const rastreadorRow = await rastreadoresRepo.getById(id);
+  const rastreador = rastreadorRow
+    ? asRastreador(rastreadorRow)
+    : ({ id, numeroSerial: '', imei: '', status: 'ativo' } as Rastreador);
+  return {
+    message: 'OK',
+    data: {
+      rastreador,
+      eventos: paged.items,
+      pagination: { page: paged.page, limit: paged.limit, total: paged.total, pages: paged.pages }
+    }
+  };
 }
 
 export async function criarRastreador(dados: Partial<Rastreador>) {
@@ -477,7 +499,7 @@ export async function obterFornecedorChipGsm(id: string): Promise<FornecedorChip
 }
 
 export async function criarFornecedorChipGsm(data: FornecedorChipGSMCreateData): Promise<FornecedorChipGSMResponse> {
-  const saved = await fornecedoresRepo.save(undefined, data as Record<string, unknown>);
+  const saved = await fornecedoresRepo.save(undefined, data as unknown as Record<string, unknown>);
   return { message: 'Criado', data: { fornecedor: saved as unknown as FornecedorChipGSM } };
 }
 
@@ -485,7 +507,7 @@ export async function atualizarFornecedorChipGsm(
   id: string,
   data: Partial<FornecedorChipGSMCreateData>
 ): Promise<FornecedorChipGSMResponse> {
-  const saved = await fornecedoresRepo.update(id, data as Record<string, unknown>);
+  const saved = await fornecedoresRepo.update(id, data as unknown as Record<string, unknown>);
   return { message: 'Atualizado', data: { fornecedor: saved as unknown as FornecedorChipGSM } };
 }
 

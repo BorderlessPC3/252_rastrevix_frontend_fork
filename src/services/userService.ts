@@ -13,7 +13,7 @@ export interface UserProfileUpdate {
 class UserService {
   async updateProfile(userId: string, data: UserProfileUpdate) {
     if (useFirebaseDirect()) {
-      const user = await firebaseUpdateProfile(userId, data);
+      const user = await firebaseUpdateProfile(userId, { ...data });
       return { message: 'Perfil atualizado', data: { user } };
     }
 

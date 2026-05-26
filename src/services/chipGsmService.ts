@@ -122,6 +122,9 @@ class ChipGsmService {
       method: 'DELETE',
     });
   }
+
+  /** Alias usado em EstoqueChipGSM */
+  excluirChipGsm = this.deletarChipGsm.bind(this);
 }
 
 export const chipGsmService = new ChipGsmService();
