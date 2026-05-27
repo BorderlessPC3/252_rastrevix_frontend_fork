@@ -2,6 +2,13 @@
  * Utilitários para exportar dados em PDF, XML e XLSX
  */
 
+import {
+  applyPdfBrandingHeader,
+  buildPdfPrintHeaderHtml,
+  getPdfBranding,
+  hexToRgb
+} from './pdfBranding';
+
 // Função para exportar dados em XLSX
 export const exportToXLSX = async (
   data: any[],
@@ -123,14 +130,9 @@ export const exportToPDF = async (
     }
 
     const doc = new jsPDF();
-
-    // Adicionar título
-    doc.setFontSize(18);
-    doc.text(title, 14, 22);
-
-    // Adicionar data
-    doc.setFontSize(10);
-    doc.text(`Data de exportação: ${new Date().toLocaleString('pt-BR')}`, 14, 30);
+    const branding = await getPdfBranding();
+    const tableStartY = await applyPdfBrandingHeader(doc, title, branding);
+    const headColor = hexToRgb(branding?.primaryColor || '#22c55e');
 
     // Preparar dados para a tabela
     const tableData = data.map(item =>
@@ -148,11 +150,11 @@ export const exportToPDF = async (
     (doc as any).autoTable({
       head: [tableHeaders],
       body: tableData,
-      startY: 35,
+      startY: tableStartY,
       styles: { fontSize: 8 },
-      headStyles: { fillColor: [34, 197, 94] },
+      headStyles: { fillColor: headColor },
       alternateRowStyles: { fillColor: [249, 250, 251] },
-      margin: { top: 35 }
+      margin: { top: tableStartY }
     });
 
     // Salvar PDF
@@ -165,12 +167,16 @@ export const exportToPDF = async (
 };
 
 // Método alternativo simples para PDF (sem biblioteca externa)
-const exportToPDFSimple = (
+const exportToPDFSimple = async (
   data: any[],
   _filename: string,
   title: string,
   columns: { key: string; label: string; width?: number }[]
-): void => {
+): Promise<void> => {
+  const branding = await getPdfBranding();
+  const headerHtml = buildPdfPrintHeaderHtml(branding, title);
+  const accent = branding?.primaryColor || '#22c55e';
+
   // Criar HTML para impressão
   let html = `
     <!DOCTYPE html>
@@ -187,7 +193,7 @@ const exportToPDFSimple = (
           font-family: Arial, sans-serif;
           padding: 20px;
         }
-        h1 { color: #22c55e; margin-bottom: 10px; }
+        h1 { margin-bottom: 10px; }
         .date { color: #666; margin-bottom: 20px; }
         table {
           width: 100%;
@@ -195,7 +201,7 @@ const exportToPDFSimple = (
           margin-top: 20px;
         }
         th {
-          background-color: #22c55e;
+          background-color: ${accent};
           color: white;
           padding: 10px;
           text-align: left;
@@ -211,8 +217,7 @@ const exportToPDFSimple = (
       </style>
     </head>
     <body>
-      <h1>${title}</h1>
-      <div class="date">Data de exportação: ${new Date().toLocaleString('pt-BR')}</div>
+      ${headerHtml}
       <table>
         <thead>
           <tr>

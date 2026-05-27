@@ -2,9 +2,7 @@
 
 import type React from "react"
 import { useState, useEffect } from "react"
-import { Link } from "react-router-dom"
 import { useAuth } from "../contexts/AuthContext"
-import { canAccessPath } from "../utils/rbac"
 import { maquinaService } from "../services/maquinaService"
 import { clienteService } from "../services/clienteService"
 import { colaboradorService } from "../services/colaboradorService"
@@ -232,16 +230,6 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
       </div>
-
-      <nav className="dashboard-quick-nav" aria-label="Atalhos principais">
-        <Link to="/mapa">Mapa ao vivo</Link>
-        <Link to="/mapa/historico">Replay de rotas</Link>
-        <Link to="/relatorios/historico">Relatórios</Link>
-        {canAccessPath("/gerencia/integracao", user?.role) && (
-          <Link to="/gerencia/integracao">Integração</Link>
-        )}
-        <Link to="/profile">Perfil</Link>
-      </nav>
     </div>
   )
 }

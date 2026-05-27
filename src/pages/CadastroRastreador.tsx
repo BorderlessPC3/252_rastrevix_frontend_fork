@@ -367,6 +367,7 @@ const CadastroRastreador: React.FC = () => {
               className="form-select"
             >
               <option value="GPRS">GPRS</option>
+              <option value="TCP">TCP</option>
               <option value="4G">4G</option>
               <option value="3G">3G</option>
               <option value="2G">2G</option>

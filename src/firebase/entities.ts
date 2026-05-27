@@ -523,6 +523,10 @@ export async function getTenantBranding(tenantId?: string): Promise<TenantBrandi
   let tenant = tenantId ? rows.find((r) => r.id === tenantId && r.active !== false) : null;
   if (!tenant) tenant = rows.find((r) => r.slug === 'default' && r.active !== false) ?? null;
   if (!tenant) return null;
+  return mapTenantBranding(tenant);
+}
+
+function mapTenantBranding(tenant: Record<string, unknown>): TenantBranding {
   return {
     id: String(tenant.id),
     slug: String(tenant.slug ?? 'default'),
@@ -532,6 +536,46 @@ export async function getTenantBranding(tenantId?: string): Promise<TenantBrandi
     secondaryColor: String(tenant.secondaryColor ?? '#0f172a'),
     faviconUrl: tenant.faviconUrl as string | undefined
   };
+}
+
+async function resolveTenantRow(tenantId?: string): Promise<Record<string, unknown>> {
+  const rows = await tenantsRepo.getAll();
+  let tenant = tenantId ? rows.find((r) => r.id === tenantId && r.active !== false) : null;
+  if (!tenant) tenant = rows.find((r) => r.slug === 'default' && r.active !== false) ?? null;
+  if (tenant) return tenant;
+
+  const id = tenantId || 'default';
+  const saved = await tenantsRepo.save(id, {
+    slug: 'default',
+    name: 'Rastrevix',
+    active: true,
+    primaryColor: '#00d9ff',
+    secondaryColor: '#0f172a'
+  });
+  return saved;
+}
+
+export async function updateTenantBranding(
+  tenantId: string | undefined,
+  data: {
+    name?: string;
+    logoUrl?: string | null;
+    primaryColor?: string;
+    secondaryColor?: string;
+    faviconUrl?: string | null;
+  }
+): Promise<TenantBranding> {
+  const tenant = await resolveTenantRow(tenantId);
+  const id = String(tenant.id);
+  const patch: Record<string, unknown> = {};
+  if (data.name !== undefined) patch.name = data.name;
+  if (data.logoUrl !== undefined) patch.logoUrl = data.logoUrl || null;
+  if (data.primaryColor !== undefined) patch.primaryColor = data.primaryColor;
+  if (data.secondaryColor !== undefined) patch.secondaryColor = data.secondaryColor;
+  if (data.faviconUrl !== undefined) patch.faviconUrl = data.faviconUrl || null;
+
+  const saved = await tenantsRepo.update(id, patch);
+  return mapTenantBranding(saved);
 }
 
 // --- Frota ---

@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect, type ReactNode }
 import { apiService, type LoginCredentials, type RegisterData } from '../services/api';
 import { socketService } from '../services/socketService';
 import { useFirebaseDirect } from '../config/firebase';
-import { watchAuthState } from '../firebase/auth';
+import { firebaseGetCurrentUser, watchAuthState } from '../firebase/auth';
 
 interface User {
   id: string;
@@ -24,6 +24,7 @@ interface AuthContextType {
   login: (credentials: LoginCredentials) => Promise<void>;
   register: (data: RegisterData) => Promise<void>;
   logout: () => Promise<void>;
+  refreshUser: () => Promise<void>;
   loading: boolean;
   error: string | null;
 }
@@ -216,6 +217,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  const refreshUser = async () => {
+    try {
+      if (useFirebaseDirect()) {
+        const profile = await firebaseGetCurrentUser();
+        if (profile && profile.status === 'active') {
+          setUser(profile);
+          setIsAuthenticated(true);
+        }
+        return;
+      }
+      const response = await apiService.getCurrentUser();
+      setUser(response.data.user);
+      setIsAuthenticated(true);
+    } catch (err) {
+      console.error('Erro ao atualizar perfil:', err);
+    }
+  };
+
   const logout = async () => {
     try {
       const refreshToken = apiService.getRefreshToken();
@@ -240,6 +259,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     login,
     register,
     logout,
+    refreshUser,
     loading,
     error
   };

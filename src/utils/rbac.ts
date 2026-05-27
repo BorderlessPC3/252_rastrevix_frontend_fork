@@ -25,12 +25,17 @@ export const MANAGER_ROUTE_PREFIXES = [
   '/estoque'
 ] as const;
 
+/** Gestão de usuários admin — qualquer usuário logado (bootstrap do 1º admin) */
+export const ADMIN_USERS_PATH = '/gerencia/usuarios';
+
 export function isEnabledAppPath(path: string): boolean {
   return (ENABLED_APP_PATHS as readonly string[]).includes(path);
 }
 
 export function canAccessPath(path: string, role?: string): boolean {
   if (!isEnabledAppPath(path)) return false;
+
+  if (path === ADMIN_USERS_PATH) return true;
 
   const r = normalizeRole(role);
   if (r === 'admin') return true;
@@ -39,6 +44,10 @@ export function canAccessPath(path: string, role?: string): boolean {
   if (needsManager) return hasMinimumRole(r, 'manager');
 
   return true;
+}
+
+export function canManagePlatformUsers(role?: string): boolean {
+  return normalizeRole(role) === 'admin';
 }
 
 export function canSeeIntegracao(role?: string): boolean {
