@@ -1,21 +1,25 @@
 "use client"
 
 import React, { useEffect, useRef, useState, useCallback } from "react"
-import L from "leaflet"
-import "leaflet/dist/leaflet.css"
 import { frotaService, type VeiculoFrota } from "../services/frotaService"
 import { clienteService, type Cliente } from "../services/clienteService"
 import { exportToPDF, exportToXLSX } from "../utils/exportUtils"
 import { showError, showSuccess } from "../utils/toast"
+import GoogleMapContainer from "../components/GoogleMapContainer"
+import { useGoogleMap } from "../hooks/useGoogleMap"
+import { createReplayMarkerIcon } from "../lib/googleMapsMarkers"
+import { loadGoogleMaps } from "../lib/googleMapsLoader"
 import "../styles/maps.css"
 import "../styles/dashboard-pages.css"
 
 const HistoricoRotas: React.FC = () => {
-  const mapRef = useRef<HTMLDivElement>(null)
-  const mapInstanceRef = useRef<L.Map | null>(null)
-  const polylineRef = useRef<L.Polyline | null>(null)
-  const replayMarkerRef = useRef<L.CircleMarker | null>(null)
+  const mapContainerRef = useRef<HTMLDivElement>(null)
+  const polylineRef = useRef<google.maps.Polyline | null>(null)
+  const replayMarkerRef = useRef<google.maps.Marker | null>(null)
   const replayTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  const { mapRef, ready, error } = useGoogleMap(mapContainerRef)
+  const mapLoading = !ready && !error
 
   const [clientes, setClientes] = useState<Cliente[]>([])
   const [veiculos, setVeiculos] = useState<VeiculoFrota[]>([])
@@ -48,19 +52,46 @@ const HistoricoRotas: React.FC = () => {
     frotaService.listar({ clienteId }).then((r) => setVeiculos(r.veiculos))
   }, [clienteId])
 
-  useEffect(() => {
-    if (!mapRef.current || mapInstanceRef.current) return
-    const map = L.map(mapRef.current).setView([-14.235, -51.9253], 5)
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      maxZoom: 19,
-      attribution: "© OSM",
-    }).addTo(map)
-    mapInstanceRef.current = map
-    return () => {
-      map.remove()
-      mapInstanceRef.current = null
-    }
+  const clearRouteLayers = useCallback(() => {
+    polylineRef.current?.setMap(null)
+    polylineRef.current = null
+    replayMarkerRef.current?.setMap(null)
+    replayMarkerRef.current = null
   }, [])
+
+  const desenharRota = useCallback(
+    async (coords: Array<{ lat: number; lng: number }>) => {
+      const map = mapRef.current
+      if (!map) return
+
+      clearRouteLayers()
+      if (coords.length === 0) return
+
+      await loadGoogleMaps()
+
+      const path = coords.map((c) => ({ lat: c.lat, lng: c.lng }))
+
+      polylineRef.current = new google.maps.Polyline({
+        path,
+        geodesic: true,
+        strokeColor: "#00d9ff",
+        strokeOpacity: 0.85,
+        strokeWeight: 4,
+        map,
+      })
+
+      const bounds = new google.maps.LatLngBounds()
+      path.forEach((p) => bounds.extend(p))
+      map.fitBounds(bounds, { top: 40, right: 40, bottom: 40, left: 40 })
+
+      replayMarkerRef.current = new google.maps.Marker({
+        position: path[0],
+        map,
+        icon: createReplayMarkerIcon(),
+      })
+    },
+    [mapRef, clearRouteLayers]
+  )
 
   const buildIsoRange = () => {
     const ini = `${dataInicio}T${horaInicio}:00`
@@ -68,28 +99,13 @@ const HistoricoRotas: React.FC = () => {
     return { dataInicio: new Date(ini).toISOString(), dataFim: new Date(fim).toISOString() }
   }
 
-  const desenharRota = useCallback((coords: Array<[number, number]>) => {
-    const map = mapInstanceRef.current
-    if (!map) return
-    if (polylineRef.current) map.removeLayer(polylineRef.current)
-    if (replayMarkerRef.current) map.removeLayer(replayMarkerRef.current)
-    if (coords.length === 0) return
-
-    polylineRef.current = L.polyline(coords, { color: "#00d9ff", weight: 4, opacity: 0.85 }).addTo(map)
-    map.fitBounds(polylineRef.current.getBounds(), { padding: [40, 40] })
-
-    replayMarkerRef.current = L.circleMarker(coords[0], {
-      radius: 8,
-      fillColor: "#10b981",
-      color: "#fff",
-      weight: 2,
-      fillOpacity: 1,
-    }).addTo(map)
-  }, [])
-
   const carregarRota = async () => {
     if (!veiculoId || !dataInicio || !dataFim) {
       showError("Selecione veículo e período")
+      return
+    }
+    if (!ready) {
+      showError(error ?? "Aguarde o mapa carregar")
       return
     }
     try {
@@ -107,7 +123,7 @@ const HistoricoRotas: React.FC = () => {
       setPontos(pts)
       setDistanciaKm(rota.distanciaKm)
       setDuracaoMinutos(rota.duracaoMinutos)
-      desenharRota(pts.map((p) => [p.lat, p.lng] as [number, number]))
+      await desenharRota(pts)
       showSuccess(`Rota carregada: ${pts.length} pontos`)
     } catch (e) {
       showError(e instanceof Error ? e.message : "Erro ao carregar rota")
@@ -139,8 +155,8 @@ const HistoricoRotas: React.FC = () => {
       }
       setReplayIndex(idx)
       const p = pontos[idx]
-      replayMarkerRef.current?.setLatLng([p.lat, p.lng])
-      mapInstanceRef.current?.panTo([p.lat, p.lng], { animate: true })
+      replayMarkerRef.current?.setPosition({ lat: p.lat, lng: p.lng })
+      mapRef.current?.panTo({ lat: p.lat, lng: p.lng })
     }, 400)
   }
 
@@ -184,6 +200,8 @@ const HistoricoRotas: React.FC = () => {
       cols
     )
   }
+
+  useEffect(() => () => clearRouteLayers(), [clearRouteLayers])
 
   return (
     <div className="dashboard-page historico-rotas-page">
@@ -229,10 +247,10 @@ const HistoricoRotas: React.FC = () => {
       </div>
 
       <div className="historico-actions">
-        <button type="button" className="btn-primary" onClick={carregarRota} disabled={loading}>
+        <button type="button" className="btn-primary" onClick={carregarRota} disabled={loading || !ready}>
           {loading ? "Carregando…" : "Carregar rota"}
         </button>
-        <button type="button" className="btn-secondary" onClick={iniciarReplay} disabled={replaying || pontos.length < 2}>
+        <button type="button" className="btn-secondary" onClick={iniciarReplay} disabled={replaying || pontos.length < 2 || !ready}>
           Replay
         </button>
         <button type="button" className="btn-secondary" onClick={pararReplay} disabled={!replaying}>
@@ -253,7 +271,12 @@ const HistoricoRotas: React.FC = () => {
         {replaying && <span>Replay: {replayIndex + 1}/{pontos.length}</span>}
       </div>
 
-      <div ref={mapRef} className="map historico-map" />
+      <GoogleMapContainer
+        mapRef={mapContainerRef}
+        className="map historico-map"
+        error={error}
+        loading={mapLoading}
+      />
     </div>
   )
 }

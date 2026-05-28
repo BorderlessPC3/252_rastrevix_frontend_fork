@@ -2,8 +2,6 @@
 
 import type React from "react"
 import { useCallback, useEffect, useRef, useState } from "react"
-import L from "leaflet"
-import "leaflet/dist/leaflet.css"
 import "../styles/maps.css"
 import { frotaService, type VeiculoFrota } from "../services/frotaService"
 import { socketService } from "../services/socketService"
@@ -11,25 +9,23 @@ import { apiService } from "../services/api"
 import { useFirebaseDirect } from "../config/firebase"
 import { Link } from "react-router-dom"
 import PageFeedback from "../components/PageFeedback"
-
-delete (L.Icon.Default.prototype as unknown as { _getIconUrl?: unknown })._getIconUrl
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
-  iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
-  shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
-})
+import GoogleMapContainer from "../components/GoogleMapContainer"
+import { useGoogleMap, type GoogleMapType } from "../hooks/useGoogleMap"
+import { createVehicleMarkerIcon } from "../lib/googleMapsMarkers"
 
 const Maps: React.FC = () => {
-  const mapRef = useRef<HTMLDivElement>(null)
-  const mapInstanceRef = useRef<L.Map | null>(null)
-  const markersRef = useRef<Map<string, L.Marker>>(new Map())
-  const tileLayerRef = useRef<L.TileLayer | null>(null)
+  const mapContainerRef = useRef<HTMLDivElement>(null)
+  const markersRef = useRef<Map<string, google.maps.Marker>>(new Map())
+  const infoWindowRef = useRef<google.maps.InfoWindow | null>(null)
   const veiculosRef = useRef<VeiculoFrota[]>([])
+
+  const { mapRef, ready, error, setMapType } = useGoogleMap(mapContainerRef)
+  const mapLoading = !ready && !error
 
   const [veiculos, setVeiculos] = useState<VeiculoFrota[]>([])
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [mapType, setMapType] = useState<"mapa" | "satelite">("mapa")
+  const [errorFrota, setErrorFrota] = useState<string | null>(null)
+  const [mapType, setMapTypeState] = useState<"mapa" | "satelite">("mapa")
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [wsConnected, setWsConnected] = useState(false)
   const [eventosRecentes, setEventosRecentes] = useState<string[]>([])
@@ -44,59 +40,50 @@ const Maps: React.FC = () => {
     }
   }
 
-  const getVehicleIcon = (tipo?: string, isSelected = false) => {
-    const size = isSelected ? 32 : 24
-    const color = "#22c55e"
-    const isBus = tipo === "onibus"
-    return L.divIcon({
-      className: "vehicle-marker",
-      html: isBus
-        ? `<svg width="${size}" height="${size}" viewBox="0 0 24 24"><path fill="${color}" d="M4 6h16v11H4V6zm2 13a1.5 1.5 0 100-3 1.5 1.5 0 000 3zm12 0a1.5 1.5 0 100-3 1.5 1.5 0 000 3z"/></svg>`
-        : `<svg width="${size}" height="${size}" viewBox="0 0 24 24"><path fill="${color}" d="M5 11l1.5-5h11L19 11v8H5v-8zm2 9a1.5 1.5 0 100-3 1.5 1.5 0 000 3zm10 0a1.5 1.5 0 100-3 1.5 1.5 0 000 3z"/></svg>`,
-      iconSize: [size, size],
-      iconAnchor: [size / 2, size / 2],
-    })
-  }
-
-  const updateMarker = useCallback((v: VeiculoFrota, animate = false) => {
-    const map = mapInstanceRef.current
+  const updateMarker = useCallback((v: VeiculoFrota) => {
+    const map = mapRef.current
     const pos = v.posicaoAtual
     if (!map || !pos?.latitude || !pos?.longitude) return
 
-    const latLng: L.LatLngExpression = [pos.latitude, pos.longitude]
+    const position = { lat: pos.latitude, lng: pos.longitude }
     const placa = v.placa || v.codigo
     const vel = Math.round(pos.velocidade || 0)
     const isSelected = selectedId === v.id
     const tipo = v.tipoVeiculo || "carro"
+    const icon = createVehicleMarkerIcon(tipo, isSelected)
 
     let marker = markersRef.current.get(v.id)
     if (!marker) {
-      marker = L.marker(latLng, { icon: getVehicleIcon(tipo, isSelected) }).addTo(map)
-      marker.on("click", () => {
+      marker = new google.maps.Marker({
+        position,
+        map,
+        icon,
+        title: v.nome,
+      })
+      marker.addListener("click", () => {
         setSelectedId(v.id)
         document.getElementById(`veiculo-${v.id}`)?.scrollIntoView({ behavior: "smooth", block: "nearest" })
+        if (!infoWindowRef.current) {
+          infoWindowRef.current = new google.maps.InfoWindow()
+        }
+        infoWindowRef.current.setContent(
+          `<div style="text-align:center"><b>${v.nome}</b><br/>${placa}<br/>${vel} km/h</div>`
+        )
+        infoWindowRef.current.open({ map, anchor: marker })
       })
       markersRef.current.set(v.id, marker)
     } else {
-      if (animate) {
-        marker.setLatLng(latLng)
-      } else {
-        marker.setLatLng(latLng)
-      }
-      marker.setIcon(getVehicleIcon(tipo, isSelected))
+      marker.setPosition(position)
+      marker.setIcon(icon)
     }
-
-    marker.bindPopup(
-      `<div style="text-align:center"><b>${v.nome}</b><br/>${placa}<br/>${vel} km/h</div>`
-    )
-  }, [selectedId])
+  }, [mapRef, selectedId])
 
   const syncMarkers = useCallback((lista: VeiculoFrota[]) => {
     lista.forEach((v) => updateMarker(v))
     const ids = new Set(lista.map((v) => v.id))
     markersRef.current.forEach((marker, id) => {
       if (!ids.has(id)) {
-        mapInstanceRef.current?.removeLayer(marker)
+        marker.setMap(null)
         markersRef.current.delete(id)
       }
     })
@@ -111,7 +98,7 @@ const Maps: React.FC = () => {
       })
       veiculosRef.current = next
       const updated = next.find((v) => (v.rastreadorId || v.id) === rastreadorId)
-      if (updated) updateMarker(updated, true)
+      if (updated) updateMarker(updated)
       return next
     })
   }, [updateMarker])
@@ -119,39 +106,33 @@ const Maps: React.FC = () => {
   const loadVeiculos = async () => {
     try {
       setLoading(true)
-      setError(null)
+      setErrorFrota(null)
       const lista = await frotaService.listarMapa()
       veiculosRef.current = lista
       setVeiculos(lista)
-      syncMarkers(lista)
+      if (ready) syncMarkers(lista)
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao carregar frota")
+      setErrorFrota(err instanceof Error ? err.message : "Erro ao carregar frota")
     } finally {
       setLoading(false)
     }
   }
 
   useEffect(() => {
-    if (mapRef.current && !mapInstanceRef.current) {
-      const map = L.map(mapRef.current).setView([-14.235, -51.9253], 5)
-      tileLayerRef.current = L.tileLayer(
-        "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-        { attribution: "© OpenStreetMap", maxZoom: 19 }
-      ).addTo(map)
-      mapInstanceRef.current = map
+    if (ready) {
       loadVeiculos()
     }
     return () => {
-      markersRef.current.forEach((m) => m.remove())
+      markersRef.current.forEach((m) => m.setMap(null))
       markersRef.current.clear()
-      mapInstanceRef.current?.remove()
-      mapInstanceRef.current = null
+      infoWindowRef.current?.close()
+      infoWindowRef.current = null
     }
-  }, [])
+  }, [ready])
 
   useEffect(() => {
-    syncMarkers(veiculos)
-  }, [veiculos, selectedId, syncMarkers])
+    if (ready) syncMarkers(veiculos)
+  }, [veiculos, selectedId, ready, syncMarkers])
 
   useEffect(() => {
     let cancelled = false
@@ -204,27 +185,17 @@ const Maps: React.FC = () => {
   }, [applyPosicaoUpdate])
 
   const toggleMapType = (newType: "mapa" | "satelite") => {
-    const map = mapInstanceRef.current
-    if (!map || mapType === newType) return
-    if (tileLayerRef.current) map.removeLayer(tileLayerRef.current)
-    tileLayerRef.current =
-      newType === "satelite"
-        ? L.tileLayer(
-            "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-            { attribution: "© Esri", maxZoom: 19 }
-          )
-        : L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-            attribution: "© OpenStreetMap",
-            maxZoom: 19,
-          })
-    tileLayerRef.current.addTo(map)
-    setMapType(newType)
+    if (mapType === newType) return
+    const googleType: GoogleMapType = newType === "satelite" ? "satellite" : "roadmap"
+    setMapType(googleType)
+    setMapTypeState(newType)
   }
 
   const centerOn = (v: VeiculoFrota) => {
     const pos = v.posicaoAtual
-    if (!pos?.latitude || !pos?.longitude || !mapInstanceRef.current) return
-    mapInstanceRef.current.setView([pos.latitude, pos.longitude], 15)
+    if (!pos?.latitude || !pos?.longitude || !mapRef.current) return
+    mapRef.current.setCenter({ lat: pos.latitude, lng: pos.longitude })
+    mapRef.current.setZoom(15)
     setSelectedId(v.id)
   }
 
@@ -280,12 +251,18 @@ const Maps: React.FC = () => {
           )}
         </div>
       </div>
-      <div ref={mapRef} className="map">
+      <GoogleMapContainer
+        mapRef={mapContainerRef}
+        className="map"
+        error={error}
+        loading={mapLoading}
+      >
         <div className="map-controls">
           <button
             type="button"
             className={`map-control-btn ${mapType === "mapa" ? "active" : ""}`}
             onClick={() => toggleMapType("mapa")}
+            disabled={!ready}
           >
             Mapa
           </button>
@@ -293,14 +270,15 @@ const Maps: React.FC = () => {
             type="button"
             className={`map-control-btn ${mapType === "satelite" ? "active" : ""}`}
             onClick={() => toggleMapType("satelite")}
+            disabled={!ready}
           >
             Satélite
           </button>
         </div>
-      </div>
-      {error && (
+      </GoogleMapContainer>
+      {errorFrota && (
         <div className="maps-error-banner">
-          <PageFeedback error={error} onRetry={() => void loadVeiculos()} />
+          <PageFeedback error={errorFrota} onRetry={() => void loadVeiculos()} />
         </div>
       )}
     </div>

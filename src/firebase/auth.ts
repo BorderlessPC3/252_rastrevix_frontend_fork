@@ -7,7 +7,7 @@ import {
   type User as FirebaseUser
 } from 'firebase/auth';
 import { collection, getDocs, limit, query, where } from 'firebase/firestore';
-import { getDb, getFirebaseAuth } from './app';
+import { ensureFirestoreOnline, getDb, getFirebaseAuth } from './app';
 import { COLLECTIONS } from './collections';
 import { docToRecord, formatFirebaseError, toIso } from './helpers';
 import { FirestoreRepo } from './repository';
@@ -30,6 +30,30 @@ export interface AppUser {
 
 const usersRepo = new FirestoreRepo(COLLECTIONS.users);
 
+function isFirestoreConnectivityError(err: unknown): boolean {
+  if (!(err instanceof Error)) return false;
+  return /offline|not found|unavailable|failed to get document/i.test(err.message);
+}
+
+async function withFirestoreRetry<T>(fn: () => Promise<T>, attempts = 3): Promise<T> {
+  await ensureFirestoreOnline();
+  let lastErr: unknown;
+  for (let i = 0; i < attempts; i += 1) {
+    try {
+      return await fn();
+    } catch (err) {
+      lastErr = err;
+      if (isFirestoreConnectivityError(err) && i < attempts - 1) {
+        await new Promise((resolve) => setTimeout(resolve, 400 * (i + 1)));
+        await ensureFirestoreOnline();
+        continue;
+      }
+      throw err;
+    }
+  }
+  throw lastErr;
+}
+
 function mapUser(row: Record<string, unknown>): AppUser {
   return {
     id: String(row.id),
@@ -48,7 +72,7 @@ function mapUser(row: Record<string, unknown>): AppUser {
 }
 
 async function loadProfileByUid(uid: string): Promise<AppUser | null> {
-  const row = await usersRepo.getById(uid);
+  const row = await withFirestoreRetry(() => usersRepo.getById(uid));
   if (!row) return null;
   return mapUser(row);
 }
@@ -58,11 +82,13 @@ async function findLegacyUserByEmail(email: string): Promise<Record<string, unkn
   const normalized = email.trim().toLowerCase();
   if (!normalized) return null;
 
-  const snap = await getDocs(
-    query(
-      collection(getDb(), COLLECTIONS.users),
-      where('email', '==', normalized),
-      limit(1)
+  const snap = await withFirestoreRetry(() =>
+    getDocs(
+      query(
+        collection(getDb(), COLLECTIONS.users),
+        where('email', '==', normalized),
+        limit(1)
+      )
     )
   );
   if (snap.empty) return null;
@@ -71,7 +97,9 @@ async function findLegacyUserByEmail(email: string): Promise<Record<string, unkn
 }
 
 async function hasAnyUser(): Promise<boolean> {
-  const snap = await getDocs(query(collection(getDb(), COLLECTIONS.users), limit(1)));
+  const snap = await withFirestoreRetry(() =>
+    getDocs(query(collection(getDb(), COLLECTIONS.users), limit(1)))
+  );
   return !snap.empty;
 }
 
@@ -85,7 +113,9 @@ async function ensureProfile(
   const existing = await loadProfileByUid(uid);
   if (existing) {
     if (existing.status !== 'active') throw new Error('Conta inativa');
-    await usersRepo.update(uid, { lastLoginAt: new Date(), firebaseUid: uid });
+    await withFirestoreRetry(() =>
+      usersRepo.update(uid, { lastLoginAt: new Date(), firebaseUid: uid })
+    );
     const updated = await loadProfileByUid(uid);
     if (!updated) throw new Error('Não foi possível atualizar o perfil do usuário');
     return updated;
@@ -116,7 +146,7 @@ async function ensureProfile(
     updatedAt: now
   };
 
-  const saved = await usersRepo.save(uid, base);
+  const saved = await withFirestoreRetry(() => usersRepo.save(uid, base));
   return mapUser(saved);
 }
 
@@ -162,7 +192,7 @@ export async function firebaseRegister(data: RegisterData): Promise<AuthResponse
     return buildAuthResponse(profile, token);
   } catch (err: unknown) {
     console.error('[Firebase Auth] register:', err);
-    if (createdUser) {
+    if (createdUser && !isFirestoreConnectivityError(err)) {
       try {
         await deleteUser(createdUser);
       } catch (rollbackErr) {

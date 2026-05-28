@@ -97,10 +97,23 @@ export function mapFirebaseAuthError(code: string): string {
     case 'auth/admin-restricted-operation':
       return 'Operação restrita pelo administrador do projeto Firebase.';
     case 'permission-denied':
-      return 'Sem permissão no Firestore. Publique as regras no banco prov-252 e confira se está logado.';
+      return 'Sem permissão no Firestore. Publique as regras no banco configurado e confira se está logado.';
     default:
       return `Erro de autenticação (${code || 'desconhecido'})`;
   }
+}
+
+function mapFirestoreConfigError(message: string): string | null {
+  if (/database ['"]?\(default\)['"]? not found/i.test(message)) {
+    return 'Firestore não foi criado. No Firebase Console (borderless-92b2c) vá em Firestore → Create database → modo Production → região southamerica-east1.';
+  }
+  if (/database ['"]?prov-252['"]? not found/i.test(message)) {
+    return 'Banco prov-252 não existe. Remova VITE_FIRESTORE_DATABASE_ID do .env ou crie esse banco no Firestore.';
+  }
+  if (/client is offline|failed to get document because the client is offline/i.test(message)) {
+    return 'Firestore indisponível. Crie o banco no Firebase Console e publique as regras: npm run firebase:rules';
+  }
+  return null;
 }
 
 /** Mensagem legível para erros do Firebase Auth, Firestore ou Error genérico. */
@@ -113,9 +126,12 @@ export function formatFirebaseError(err: unknown): string {
   }
 
   if (err instanceof Error) {
+    const configError = mapFirestoreConfigError(err.message);
+    if (configError) return configError;
+
     const msg = err.message;
     if (/permission|PERMISSION_DENIED|insufficient/i.test(msg)) {
-      return 'Sem permissão no Firestore. Publique firestore.rules no projeto e use o banco prov-252.';
+      return 'Sem permissão no Firestore. Publique firestore.rules no projeto e confira VITE_FIRESTORE_DATABASE_ID.';
     }
     if (msg && msg !== 'Erro de autenticação') return msg;
   }
