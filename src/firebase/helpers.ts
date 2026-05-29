@@ -105,10 +105,10 @@ export function mapFirebaseAuthError(code: string): string {
 
 function mapFirestoreConfigError(message: string): string | null {
   if (/database ['"]?\(default\)['"]? not found/i.test(message)) {
-    return 'Firestore não foi criado. No Firebase Console (borderless-92b2c) vá em Firestore → Create database → modo Production → região southamerica-east1.';
+    return 'Firestore ainda não foi criado no projeto borderless-92b2c. No Firebase Console → Firestore → Create database → use o ID (default) → Production → southamerica-east1. Depois: npm run firebase:rules';
   }
-  if (/database ['"]?prov-252['"]? not found/i.test(message)) {
-    return 'Banco prov-252 não existe. Remova VITE_FIRESTORE_DATABASE_ID do .env ou crie esse banco no Firestore.';
+  if (/database ['"][^'"]+['"]? not found/i.test(message)) {
+    return 'O banco Firestore configurado em VITE_FIRESTORE_DATABASE_ID não existe. Confira o ID no Firebase Console ou remova a variável para usar (default).';
   }
   if (/client is offline|failed to get document because the client is offline/i.test(message)) {
     return 'Firestore indisponível. Crie o banco no Firebase Console e publique as regras: npm run firebase:rules';

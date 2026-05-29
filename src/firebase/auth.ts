@@ -32,7 +32,8 @@ const usersRepo = new FirestoreRepo(COLLECTIONS.users);
 
 function isFirestoreConnectivityError(err: unknown): boolean {
   if (!(err instanceof Error)) return false;
-  return /offline|not found|unavailable|failed to get document/i.test(err.message);
+  if (/database ['"][^'"]+['"]? not found/i.test(err.message)) return false;
+  return /offline|unavailable|failed to get document because the client is offline/i.test(err.message);
 }
 
 async function withFirestoreRetry<T>(fn: () => Promise<T>, attempts = 3): Promise<T> {
