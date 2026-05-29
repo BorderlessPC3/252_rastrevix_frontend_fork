@@ -4,6 +4,82 @@
   padding: 2rem;
 }
 
+.chip-gsm-cadastro-card {
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.chip-gsm-cadastro-header {
+  margin-bottom: 1.25rem;
+}
+
+.chip-gsm-cadastro-header h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.chip-gsm-required-hint {
+  margin: 0;
+  color: #ef4444;
+  font-size: 0.875rem;
+}
+
+.chip-gsm-form-section-title {
+  margin: 0 0 1rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.chip-gsm-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.chip-gsm-form .form-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+
+.chip-gsm-form .form-textarea {
+  width: 100%;
+  min-height: 100px;
+  padding: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 0.95rem;
+  resize: vertical;
+}
+
+.chip-gsm-form .form-textarea:focus {
+  outline: none;
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+
+.chip-gsm-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+@media (max-width: 768px) {
+  .chip-gsm-form .form-grid-3 {
+    grid-template-columns: 1fr;
+  }
+}
+
 .search-section {
   display: flex;
   gap: 1rem;

@@ -2,10 +2,10 @@
 
 import type React from "react"
 import { useState, useEffect } from "react"
-import { Search, Plus, Trash2 } from "lucide-react"
+import { Search, Trash2 } from "lucide-react"
 import { chipGsmService, type ChipGSM } from "../services/chipGsmService"
 import { showSuccess, showError } from "../utils/toast"
-import ChipGsmModal from "../components/ChipGsmModal"
+import ChipGsmForm from "../components/ChipGsmForm"
 import PageFeedback from "../components/PageFeedback"
 import { useAuth } from "../contexts/AuthContext"
 import { canManageCadastros } from "../utils/rbac"
@@ -20,7 +20,6 @@ const EstoqueChipGSM: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true)
   const [selectedChip, setSelectedChip] = useState<string | null>(null)
   const [page, setPage] = useState(1)
-  const [isModalOpen, setIsModalOpen] = useState(false)
 
   useEffect(() => {
     carregarChips()
@@ -32,36 +31,32 @@ const EstoqueChipGSM: React.FC = () => {
       const response = await chipGsmService.listarChipsGsm({
         page,
         limit: 100,
-        search: searchTerm || undefined,
+        search: searchTerm || undefined
       })
       setChips(response.data.chips)
     } catch (error) {
-      console.error('Erro ao carregar chips GSM:', error)
-      showError('Erro ao carregar chips GSM. Tente novamente.')
+      console.error("Erro ao carregar chips GSM:", error)
+      showError("Erro ao carregar chips GSM. Tente novamente.")
       setChips([])
     } finally {
       setIsLoading(false)
     }
   }
 
-  const handleNovo = () => {
-    setIsModalOpen(true)
-  }
-
   const handleSaveChip = () => {
     carregarChips()
-    showSuccess('Chip GSM cadastrado com sucesso!')
+    showSuccess("Chip GMS cadastrado com sucesso!")
   }
 
   const handleExcluir = async (chip: ChipGSM) => {
     if (window.confirm(`Tem certeza que deseja excluir o chip ${chip.numero}?`)) {
       try {
         await chipGsmService.excluirChipGsm(chip.id)
-        showSuccess('Chip GSM excluído com sucesso!')
+        showSuccess("Chip GSM excluído com sucesso!")
         carregarChips()
       } catch (error) {
-        console.error('Erro ao excluir chip GSM:', error)
-        showError('Erro ao excluir chip GSM. Tente novamente.')
+        console.error("Erro ao excluir chip GSM:", error)
+        showError("Erro ao excluir chip GSM. Tente novamente.")
       }
     }
   }
@@ -69,8 +64,23 @@ const EstoqueChipGSM: React.FC = () => {
   return (
     <div className="dashboard-page estoque-page">
       <div className="page-header">
-        <h1 className="page-title">ESTOQUE · Chip GSM</h1>
+        <div>
+          <h1 className="page-title">ESTOQUE · Chip GSM</h1>
+          <p className="page-subtitle">Cadastro e listagem de chips GSM do estoque</p>
+        </div>
       </div>
+
+      {canManage && (
+        <section className="chip-gsm-cadastro-card">
+          <div className="chip-gsm-cadastro-header">
+            <h2>Cadastrar Chip GMS</h2>
+            <p className="chip-gsm-required-hint">
+              Todos os campos com (*) são obrigatórios para fazer o cadastro
+            </p>
+          </div>
+          <ChipGsmForm onSuccess={handleSaveChip} />
+        </section>
+      )}
 
       <div className="page-content">
         <div className="search-section">
@@ -87,14 +97,6 @@ const EstoqueChipGSM: React.FC = () => {
               }}
             />
           </div>
-          {canManage && (
-            <div className="action-buttons-header">
-              <button className="btn btn-secondary" onClick={handleNovo}>
-                <Plus size={18} style={{ marginRight: '8px' }} />
-                Novo
-              </button>
-            </div>
-          )}
         </div>
 
         <PageFeedback
@@ -108,7 +110,7 @@ const EstoqueChipGSM: React.FC = () => {
               {chips.map((chip, index) => (
                 <div
                   key={chip.id}
-                  className={`chip-gsm-row ${selectedChip === chip.id ? 'selected' : ''}`}
+                  className={`chip-gsm-row ${selectedChip === chip.id ? "selected" : ""}`}
                   onClick={() => setSelectedChip(chip.id)}
                 >
                   <div className="chip-gsm-number">{index + 1}</div>
@@ -121,39 +123,39 @@ const EstoqueChipGSM: React.FC = () => {
                   </div>
                   <div className="chip-gsm-field">
                     <span className="chip-gsm-label">CLIENTE:</span>
-                    <span className="chip-gsm-value">{chip.cliente || '---'}</span>
+                    <span className="chip-gsm-value">{chip.cliente || "---"}</span>
                   </div>
                   <div className="chip-gsm-field">
                     <span className="chip-gsm-label">TELEFONE:</span>
-                    <span className="chip-gsm-value">{chip.telefone || '---'}</span>
+                    <span className="chip-gsm-value">{chip.telefone || "---"}</span>
                   </div>
                   <div className="chip-gsm-field">
                     <span className="chip-gsm-label">OPERADORA:</span>
-                    <span className="chip-gsm-value">{chip.operadora || '---'}</span>
+                    <span className="chip-gsm-value">{chip.operadora || "---"}</span>
                   </div>
                   <div className="chip-gsm-field">
                     <span className="chip-gsm-label">VEIC. INSTAL.:</span>
-                    <span className="chip-gsm-value">{chip.veiculoInstalado || '---'}</span>
+                    <span className="chip-gsm-value">{chip.veiculoInstalado || "---"}</span>
                   </div>
                   <div className="chip-gsm-field">
                     <span className="chip-gsm-label">EQUIP.:</span>
-                    <span className="chip-gsm-value">{chip.equipamento || '---'}</span>
+                    <span className="chip-gsm-value">{chip.equipamento || "---"}</span>
                   </div>
                   <div className="chip-gsm-field">
                     <span className="chip-gsm-label">FORNECEDOR:</span>
-                    <span className="chip-gsm-value">{chip.fornecedor || '---'}</span>
+                    <span className="chip-gsm-value">{chip.fornecedor || "---"}</span>
                   </div>
                   <div className="chip-gsm-field">
                     <span className="chip-gsm-label">MATRIZ/FRANQUIA:</span>
-                    <span className="chip-gsm-value">{chip.matrizFranquia || '---'}</span>
+                    <span className="chip-gsm-value">{chip.matrizFranquia || "---"}</span>
                   </div>
                   {canManage && (
                     <div className="chip-gsm-actions">
                       <button
                         className="btn-icon btn-icon-danger"
                         onClick={(e) => {
-                          e.stopPropagation();
-                          handleExcluir(chip);
+                          e.stopPropagation()
+                          handleExcluir(chip)
                         }}
                         title="Excluir"
                       >
@@ -167,13 +169,6 @@ const EstoqueChipGSM: React.FC = () => {
           </div>
         </PageFeedback>
       </div>
-
-      {/* Modal de Cadastro */}
-      <ChipGsmModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSave={handleSaveChip}
-      />
     </div>
   )
 }

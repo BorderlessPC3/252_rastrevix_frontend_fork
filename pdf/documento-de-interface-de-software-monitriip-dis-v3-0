@@ -1,0 +1,2222 @@
+MONITRIIP
+Documento de Interface de Software
+Versão 3.0
+Agência Nacional de Transportes Terrestres - ANTT
+Documento de Interface de Software - DIS
+MONITRIIP
+Página 2 de 42
+Histórico de Revisão
+Data Versão Descrição
+07/04/2016 1.0 Criação Do Documento.
+14/04/2016 1.1 Atualização do documento.
+24/05/2016 1.2 Alterações e correções nas mensagens de retorno e tipos de dado.
+16/06/2016 1.3 Inclusão do endereço de comunicação do webservice.
+21/07/2016 1.4 Correção do nome do atributo “dataHoraEvento”, descrito no item 7.10.2.
+21/07/2016 1.5 Adequação de atributos (parâmetros) dos métodos no DIS, que foram
+harmonizados ao padrão XSD já divulgado.
+28/07/2016 1.6 Revisão dos tipos e nomenclaturas dos métodos descritos.
+22/08/2016 1.7 Adequação para maior na quantidade de caracteres de atributos de alguns
+métodos.
+10/11/2016 1.8
+Alteração na quantidade de caracteres do campo “Telefone”;
+Inclusão dos métodos “CancelarPassagem” e “ReembolsoCartao”;
+Inclusão do campo idLog nos métodos InserirLogCancelarPassagem e
+InserirLogReembolsocartao;
+Inclusão do campo “origemEmissao” no método “vendaPassagem”;
+Alteração da quantidade de caracteres e tipo dos campos
+“numeroEquipamento” e “numeroBilheteEmbarque”.
+28/12/2016 1.10 Alteração do ambiente de validação de aplicações de monitoramento.
+05/05/2017 1.10.1
+Inclusão do parâmetro cnpjEmpresaTransporte nos métodos de integração
+"InserirLogRegistroOcorrenciaRodoviario" e
+"InserirLogRegistroOcorrenciaSemiUrbano".
+01/03/2018 1.11
+Alteração do tamanho dos parâmetros conforme abaixo:
+ Log - InserirLogVendaPassagem:
+o Parâmetro: NumeroSerieEquipamentoFiscal de 20
+para 44caracteres;
+o Deverá aceitar apenas os tamanhos 6, 20 e 44 caracteres;
+o O campo com 44 caracteres corresponde à chave de acesso do
+bilhetede passagem eletrônico;
+ Log - InserirLogBilheteEmbarque:
+o Parâmetro: NumeroEquipamento de 20 para 44 caracteres;
+o Deverá aceitar apenas os tamanhos 6, 20 e 44 caracteres;
+o O campo com 44 caracteres corresponde à chave de acesso do
+bilhete
+de passagem eletrônico;
+04/05/2018 2.0
+Inclusão das seguintes mensagens de erro:
+o Código 209; PadraoInvalido;
+o Código 210; ValidaDataHora;
+o Código 211; AutorizacaoInvalida;
+o Código 212; RegistroDuplicado;
+o Código 213; ValidaCnpjSishab;
+o Código 214; ValidaCpfSishab;
+o Código 215; ValidaPlacaSishab;
+o Código 216; PrefixoInvalido.
+15/03/2019 2.1
+Criação do item 8.1.7 que trata sobre transbordo;
+Inclusão da referência no parâmetro tipoRegistroViagem, itens 7.8.2, 7.9.2;
+Inclusão de referência à mensagem de erro código 003: A data de início da
+viagem deverá ser pelo menos 48 horas da data do evento.
+Agência Nacional de Transportes Terrestres - ANTT
+Documento de Interface de Software - DIS
+MONITRIIP
+Página 3 de 42
+04/04/2024 3.0
+Sequenciamento e IdViagem:
+Criação/inclusão do campo sequenciamento em todos os Logs, à exceção do Log
+Reembolso de Crédito do Cartão;
+Criação/inclusão do campo idViagem, relativo ao Código Identificador da Viagem,
+específico para cada Tipo de Transporte (Rodoviário Regular, Rodoviário Fretado,
+Semiurbano Regular), em todos os Logs, à exceção do Log Cartão Emitido /
+Recarga Efetuada e do Log Reembolso de Crédito do Cartão;
+Log Venda de Passagem:
+Criação do código 02 (Desconto Previsto em Lei) para preenchimento do campo
+codigoBilheteEmbarque do Log Venda de Passagem.
+Alteração do tamanho do campo identificacaoLinha do Log Venda de Passagem,
+relativo ao Prefixo da Linha (Rodoviário Regular), onde passam a ser admitidos os
+tamanhos de 8, 11 ou 12 caracteres;
+Alteração da Descrição do Campo idPontoOrigemViagem do Log Venda de
+Passagem, onde passa a ser tomado como referência o Código IBGE do
+Município de origem da viagem do passageiro e o código 9999999 para localidade
+de origem da viagem no exterior;
+Alteração da Descrição do Campo idPontoDestinoViagem do Log Venda de
+Passagem, onde passa a ser tomado como referência o Código IBGE do
+Município de destino da viagem do passageiro e o código 9999999 para localidade
+de destino da viagem no exterior;
+Criação/inclusão do campo valorICMS no Log Venda de Passagem;
+Criação/inclusão do campo dataNascimentoPassageiro no Log Venda de
+Passagem;
+Criação/inclusão do campo tipoDocumentoIdentificacaoPassageiro no Log
+Venda de Passagem;
+Criação do código 04 (Terminal de autoatendimento (totem)) para preenchimento
+do campo origemEmissao do Log Venda de Passagem.
+Alteração do status de preenchimento do campo origemEmissao do Log Venda
+de Passagem, relativo à origem / forma de emissão do bilhete adquirido pelo
+passageiro, que deixa de ser facultativo e passa a ser obrigatório;
+Log Velocidade, Tempo e Localização:
+Ajuste redacional, para melhor entendimento, da Descrição do Campo
+distanciaPercorrida do Log Velocidade, Tempo e Localização;
+Alteração do status de preenchimento do campo situacaoIgnicaoMotor do Log
+Velocidade, Tempo e Localização, que deixa de ser obrigatório e passa a ser
+facultativo;
+Alteração do status de preenchimento do campo situacaoPortaVeiculo do Log
+Velocidade, Tempo e Localização, que deixa de ser obrigatório e passa a ser
+facultativo;
+Log Jornada de Trabalho do Motorista:
+Ajustes, para melhor entendimento, no campo tipoRegistroEvento do Log
+Jornada de Trabalho do Motorista;
+Log Início/Fim de Viagem Regular:
+Criação/inclusão do campo cpfMotorista no Log Início/Fim de Viagem Regular;
+Alteração do tamanho do campo identificacaoLinha do Log Início/Fim de Viagem
+Regular, relativo ao Prefixo da Linha (Rodoviário Regular), onde passam a ser
+Agência Nacional de Transportes Terrestres - ANTT
+Documento de Interface de Software - DIS
+MONITRIIP
+Página 4 de 42
+admitidos os tamanhos de 8, 11 ou 12 caracteres;
+Ajustes, para melhor entendimento, no campo tipoRegistroViagem do Log
+Início/Fim de Viagem Regular;
+Log Início/Fim de Viagem Fretado:
+Criação/inclusão do campo cpfMotorista no Log Início/Fim de Viagem Fretado;
+Ajustes, para melhor entendimento, no campo tipoRegistroViagem do Log
+Início/Fim de Viagem Fretado;
+Log Bilhete de Embarque:
+Criação/inclusão do campo cpfMotorista no Log Bilhete de Embarque;
+Alteração do tamanho do campo identificacaoLinha do Log Bilhete de Embarque,
+relativo ao Prefixo da Linha (Rodoviário Regular), onde passam a ser admitidos os
+tamanhos de 8, 11 ou 12 caracteres;
+Alteração da Descrição do Campo idPontoOrigemViagem do Log Bilhete de
+Embarque, onde passa a ser tomado como referência o Código IBGE do
+Município de embarque do passageiro e o código 9999999 para localidade de
+embarque no exterior;
+Alteração do status de preenchimento do campo idPontoOrigemViagem do Log
+Bilhete de Embarque, que deixa de ser facultativo e passa a ser obrigatório;
+Criação/inclusão do campo idLocalEmbarquePassageiro no Log Bilhete de
+Embarque;
+Alteração da Descrição do Campo idPontoDestinoViagem do Log Bilhete de
+Embarque, onde passa a ser tomado como referência o Código IBGE do
+Município de desembarque do passageiro e o código 9999999 para localidade de
+desembarque no exterior;
+Alteração do status de preenchimento do campo idPontoDestinoViagem do Log
+Bilhete de Embarque, que deixa de ser facultativo e passa a ser obrigatório;
+Criação/inclusão do campo idLocalDesembarquePassageiro no Log Bilhete de
+Embarque;
+Criação/inclusão do campo codigoEmbarque no Log Bilhete de Embarque,
+relativo ao código identificador de embarque (check-in) ou de não embarque (noshow);
+Log Cancelar Passagem:
+Criação/inclusão do campo cnpjEmpresaTransporte no Log Cancelar
+Passagem;
+Alteração do tamanho do campo identificacaoLinha do Log Cancelar Passagem,
+relativo ao Prefixo da Linha (Rodoviário Regular), onde passam a ser admitidos os
+tamanhos de 8, 11 ou 12 caracteres;
+Tabelas:
+Atualização da Tabela 8.1.1. Código do Tipo de Serviço / Classe de Conforto;
+Atualização da Tabela 8.1.2. Código do Tipo de Viagem;
+Atualização da Tabela 8.1.3. Código do Motivo de Desconto;
+Atualização da Tabela 8.1.6. Código do Motivo de Parada;
+Atualização da Tabela 8.1.7. Código do Tipo de Registro de Viagem;
+Inclusão da Tabela 8.2. Relaciona os logs exigidos para cada tipo de transporte.
+Agência Nacional de Transportes Terrestres - ANTT
+Documento de Interface de Software - DIS
+MONITRIIP
+Página 5 de 42
+Sumário
+1. INTRODUÇÃO.....................................................................................................................7
+2. ARQUITETURA DO SERVIÇO............................................................................................7
+2.1. Padrão de comunicação.............................................................................................7
+2.2. Padrão de Mensagens ................................................................................................7
+2.2.1. Mensagens de autenticação (Cód. Retorno 0).......................................................7
+2.2.2. Mensagens de sucesso (Cód. Retorno 1)..............................................................7
+2.2.3. Mensagens de erro (Cód. Retorno 2) ....................................................................7
+2.2.4. Mensagens de erros não identificados (Cód. Retorno 3).......................................8
+3. FORMAS DE INTEGRAÇÃO...............................................................................................8
+4. AMBIENTES........................................................................................................................9
+5. DICIONÁRIO DE DADOS....................................................................................................9
+6. AUTENTICAÇÃO – MÉTODO VALIDA TOKEN .................................................................9
+6.1. Fluxo de autenticação...................................................................................................9
+6.2. Parâmetros de autenticação .........................................................................................9
+6.3. Cenários de retorno ....................................................................................................10
+6.4. Códigos de erro ..........................................................................................................10
+7. MÉTODOS DE INTEGRAÇÃO ..........................................................................................10
+7.1. InserirLogVendaPassagem......................................................................................10
+7.1.1. Descrição.............................................................................................................10
+7.1.2. Parâmetros ..........................................................................................................11
+7.2. InserirLogRegistroOcorrenciaRodoviario ..............................................................14
+7.2.1. Descrição.............................................................................................................14
+7.2.2. Parâmetros ..........................................................................................................14
+7.3. InserirLogCartaoEmitidoRecargaEfetuada.............................................................15
+7.3.1. Descrição.............................................................................................................15
+7.3.2. Parâmetros ..........................................................................................................15
+7.4. InserirLogRegistroOcorrenciaSemiUrbano ............................................................16
+7.4.1. Descrição.............................................................................................................16
+7.4.2. Parâmetros ..........................................................................................................17
+7.5. InserirLogVelocidadeTempoLocalizacao................................................................18
+7.5.1. Descrição.............................................................................................................18
+7.5.2. Parâmetros ..........................................................................................................18
+7.6. InserirLogJornadaTrabalhoMotorista .....................................................................21
+7.6.1. Descrição.............................................................................................................21
+7.6.2. Parâmetros ..........................................................................................................21
+7.7. InserirLogDetectorParada........................................................................................23
+Agência Nacional de Transportes Terrestres - ANTT
+Documento de Interface de Software - DIS
+MONITRIIP
+Página 6 de 42
+7.7.1. Descrição.............................................................................................................23
+7.7.2. Parâmetros ..........................................................................................................23
+7.8. InserirLogInicioFimViagemRegular.........................................................................25
+7.8.1. Descrição.............................................................................................................25
+7.8.2. Parâmetros ..........................................................................................................25
+7.9. InserirLogInicioFimViagemFretado.........................................................................28
+7.9.1. Descrição.............................................................................................................28
+7.9.2. Parâmetros ..........................................................................................................28
+7.10. InserirLogBilheteEmbarque .....................................................................................30
+7.10.1. Descrição.............................................................................................................30
+7.10.2. Parâmetros (bilheteEmbarque)............................................................................31
+7.10.3. Parâmetros (bilhetes)...........................................................................................32
+7.11. InserirLogLeitorCartaoRFID.....................................................................................34
+7.11.1. Descrição.............................................................................................................34
+7.11.2. Parâmetros (viagem) ...........................................................................................35
+7.11.3. Parâmetros (cartões)...........................................................................................36
+7.12. InserirLogCancelarPassagem..................................................................................36
+7.12.1. Descrição.............................................................................................................36
+7.12.2. Parâmetros ..........................................................................................................37
+7.13. InserirLogReembolsoCartao....................................................................................38
+7.13.1. Descrição.............................................................................................................38
+7.13.2. Parâmetros ..........................................................................................................38
+8. INFORMAÇÕES COMPLEMENTARES............................................................................39
+8.1. Tabelas de domínio: .................................................................................................39
+8.1.1. Tabela que define o domínio do campo CodigoTipoServico:...............................39
+8.1.2. Tabela que define o domínio do campo CodigoTipoViagem: ..............................39
+8.1.3. Tabela que define o domínio do campo CodigoMotivoDesconto:........................40
+8.1.4. Tabela que define o domínio do campo CodigoTipoOcorrencia: .........................40
+8.1.5. Tabela que define o domínio do campo CodigoTipoCartao:................................40
+8.1.6. Tabela que define o domínio do campo CodigoMotivoParada: ...........................41
+8.1.7. Tabela que define o domínio do campo TipoRegistroViagem: ............................41
+8.2. Tabela que relaciona os logs exigidos para cada tipo de transporte: .................42
+Agência Nacional de Transportes Terrestres - ANTT
+Documento de Interface de Software - DIS
+MONITRIIP
+Página 7 de 42
+Documento de Interface de Software
+1. INTRODUÇÃO
+2. ARQUITETURA DO SERVIÇO
+2.1. Padrão de comunicação
+Os códigos de retorno devem possuir 4 tipos.
+Código de retorno Tipo de mensagem
+0 Erro de autenticação.
+1 Ação executada com sucesso.
+2 Erro de validação.
+3 Erro não identificado.
+2.2. Padrão de Mensagens
+2.2.1. Mensagens de autenticação (Cód. Retorno 0)
+Identificador Mensagem
+001 Token {0} Inválido (0 – Número do Token).
+002 Token {0} Inativo (0 – Número do Token).
+003
+Token {0} passado não tem permissão ao
+serviço {1} (0 – Número do Token, 1 – Nome
+do serviço solicitado).
+2.2.2. Mensagens de sucesso (Cód. Retorno 1)
+Identificador Mensagem
+101 [metodo] registrado com sucesso.
+2.2.3. Mensagens de erro (Cód. Retorno 2)
+Código Restrição Mensagem
+201 Dominio = [valor] O valor do campo [parâmetro] é inválido.
+202 NumeroChar [mínimo] e
+[máximo]
+O valor do campo [parâmetro] é inválido. É permitida
+a inclusão de valores entre [mínimo] e [máximo].
+203 ValidaEmail E-mail inválido.
+Agência Nacional de Transportes Terrestres - ANTT
+Documento de Interface de Software - DIS
+MONITRIIP
+Página 8 de 42
+204 ValidaCNPJ CNPJ inválido
+205 ValidaData Data inválida.
+206 NumeroChar = [limite de
+caracteres] Número de caracteres do campo [parâmetro] inválido.
+207 ValidaHora Hora inválida.
+208 ValidaCPF CPF inválido.
+209 PadraoInvalido
+O valor do campo [parâmetro] é inválido. É permitida
+a inclusão de valores de [Limite 1], [Limite 2]...[Limite
+n].
+210 ValidaDataHora A Data e Hora é inválida. O período de transmissão
+não deverá ser superior ao da legislação vigente.
+211 AutorizacaoInvalida O número de Autorização / Licença de Viagem não
+foi encontrado no SISAUT / SISAUT-FC / SISHAB.
+212 RegistroDuplicado Viagem Duplicada.
+213 ValidaCnpjSishab O CNPJ não está cadastrado no SISHAB.
+214 ValidaCpfSishab O CPF não está cadastrado no SISHAB.
+215 ValidaPlacaSishab A Placa não está cadastrada no SISHAB.
+216 PrefixoInvalido Prefixo [ ] informado não foi encontrado no SGP /
+SIGMA / SGSU.
+003 ValidaInicio A data de início da viagem deverá ser pelo menos 48
+horas da data do evento.
+2.2.4. Mensagens de erros não identificados (Cód. Retorno 3)
+Identificador Mensagem
+301 Erro inesperado.
+3. FORMAS DE INTEGRAÇÃO
+Tecnologia
+WebService
+Barramento de Serviços
+Banco (view e/ou table)
+Fila de Mensagem
+Transferência de Arquivo
+Componente de software
+Outro (especificar)
+Agência Nacional de Transportes Terrestres - ANTT
+Documento de Interface de Software - DIS
+MONITRIIP
+Página 9 de 42
+4. AMBIENTES
+End point de Validação http://appservices.antt.gov.br:8000/antt/monitriip.validacao/rest/[metodo]
+End point de Produção
+O fornecimento deste endereço será realizado para fornecedores já
+indicados (vinculados) por transportadoras, os quais deverão
+encaminhar solicitação à ANTT por meio do endereço eletrônico de
+suporte (monitriip.suporte@antt.gov.br).
+5. DICIONÁRIO DE DADOS
+Campo Significado
+6. AUTENTICAÇÃO – MÉTODO VALIDA TOKEN
+6.1. Fluxo de autenticação
+6.2. Parâmetros de autenticação
+Parâmetros de Entrada
+Parâmetro Descrição
+Valores e
+formatos
+possíveis
+Obrigatório
+Token Campo único alfanumérico de até 36
+caracteres que identifica a aplicação
+Identificador único e
+global
+Sim Não
+IP Identificação do IP da máquina que
+solicitou a transmissão.
+Identificador único e
+global
+Sim Não
+Agência Nacional de Transportes Terrestres - ANTT
+Documento de Interface de Software - DIS
+MONITRIIP
+Página 10 de 42
+Parâmetros de Saída
+Parâmetro Valores e formatos possíveis
+Não se aplica
+6.3. Cenários de retorno
+Código Mensagem
+Não se aplica
+6.4. Códigos de erro
+Código Tipo Mensagem
+Não se aplica
+7. MÉTODOS DE INTEGRAÇÃO
+ InserirLogVendaPassagem;
+ InserirLogRegistroOcorrenciaRodoviario;
+ InserirLogCartaoEmitidoRecargaEfetuada;
+ InserirLogRegistroOcorrenciaSemiUrbano;
+ InserirLogVelocidadeTempoLocalizacao;
+ InserirLogJornadaTrabalhoMotorista;
+ InserirLogDetectorParada;
+ InserirLogInicioFimViagemRegular;
+ InserirLogInicioFimViagemFretado;
+ InserirLogBilheteEmbarque;
+ InserirLogLeitorCartaoRFID;
+ InserirLogCancelarPassagem;
+ InserirLogReembolsocartao;
+7.1. InserirLogVendaPassagem
+7.1.1. Descrição
+O Log Venda de Passagem deve ser gerado, automaticamente, quando o sistema de venda de
+bilhetes da empresa de transporte finalizar uma venda.
+A execução desse método deve ser realizada, ao menos uma vez ao dia, pelo subsistema não
+embarcado do transporte rodoviário regular.
+Em contingência, para o campo número de série do equipamento fiscal emissor, poderá ser
+utilizado o seguinte código:
+ 000013: Para Nota Fiscal Bilhete de Passagem Rodoviário - hipótese de emissão manual
+(com posterior lançamento no sistema fiscal utilizado, conforme a Resolução que dispõe
+sobre as condições gerais relativas à venda de bilhetes de passagem).
+Agência Nacional de Transportes Terrestres - ANTT
+Documento de Interface de Software - DIS
+MONITRIIP
+Página 11 de 42
+Os dados relativos ao Log Venda de Passagem devem ser enviados no prazo máximo de 24 (vinte
+e quatro) horas de seu registro.
+A contagem temporal do prazo limite de 24 (vinte e quatro) horas para envio do Log se inicia na
+Data/Hora de Emissão do Bilhete e se encerra na Data/Hora de Envio do Log.
+7.1.2. Parâmetros
+Parâmetro Descrição do Campo Tamanho Valor, Restrições e
+Validações Tipo Obrigatório
+idLog Identificador de Log 2 00 tinyint Sim
+codigoBilheteEmbarque Código identificador do
+bilhetede embarque 2
+[00, 01, 02]
+00 = Normal;
+01 = Gratuidade;
+02 = Desconto Previsto em
+Lei;
+tinyint Sim
+cnpjEmpresa CNPJ da empresa de transporte 14 ValidarCNPJ(); string Sim
+numeroSerieEquipamento
+Fiscal
+Em contingência
+(6 caracteres)
+Número de série do
+equipamento fiscal emissor
+(20 caracteres)
+Chave de acesso do BP-e
+(44 caracteres)
+44
+[6]
+[20]
+[44]
+NumeroChar();
+string Sim
+numeroBilheteEmbarque Número do bilhete de
+embarque 9 [1..9]; string Sim
+dataEmissaoBilhete Data de emissão do bilhete de
+embarque 8
+Padrão UTC AAAAMMDD;
+DataValida();
+ValidaDataHora();
+date Sim
+horaEmissaoBilhete Hora de emissão do bilhete
+de embarque 6
+Padrão UTC
+HHMMSS;
+HoraValida();
+ValidaDataHora();
+time Sim
+codigoCategoriaTransporte
+Categoria / Âmbito do
+Transporte 2
+[01, 02]
+01 = Interestadual;
+02 = Internacional;
+tinyint Sim
+identificacaoLinha
+Identificação da linha:
+Prefixo da Linha
+(Rodoviário Regular)
+[8], [11] ou [12]
+12 [8..12];
+PadraoInvalido(); string Sim
+idPontoOrigemViagem
+Código IBGE do Município
+indicado no bilhete, que é o
+Município de origem da
+viagem do passageiro
+Informar o código 9999999
+para localidade de origem da
+viagem no exterior
+7 [7] integer Sim
+Agência Nacional de Transportes Terrestres - ANTT
+Documento de Interface de Software - DIS
+MONITRIIP
+Página 12 de 42
+idPontoDestinoViagem
+Código IBGE do Município
+indicado no bilhete, que é o
+Município de destino da
+viagem do passageiro
+Informar o código 9999999
+para localidade de destino da
+viagem no exterior
+7 [7] integer Sim
+codigoTipoServico Tipo de Serviço / Classe de
+Conforto 2
+[01, 02, 03, 04, 05]
+Domínio ver Item 8.1.1 tinyint Sim
+dataViagem Data de início da viagem do
+passageiro constante no bilhete 8
+Padrão UTC
+AAAAMMDD;
+DataValida();
+date Sim
+horaViagem Hora de início da viagem do
+passageiro constante no bilhete 6
+Padrão UTC
+HHMMSS;
+HoraValida();
+time Sim
+codigoTipoViagem Tipo de viagem 2
+[00, 01]
+Domínio ver Item 8.1.2 tinyint Sim
+numeroPoltrona Número da poltrona 7 integer Sim
+plataformaEmbarque Plataforma de Embarque 15 [1..15]; string Não
+codigoMotivoDesconto Motivo do desconto 2
+[00, 01, 02, 03, 04, 05, 06,
+07, 08, 09]
+Domínio ver Item 8.1.3
+tinyint Sim
+valorTarifa Valor da Tarifa / Preço do
+Serviço 10
+Min: 0.00;
+Max: 99999999.99;
+NumeroChar();
+decimal
+(10,2)
+Sim
+percentualDesconto Percentual de desconto 5
+Min: 0.00;
+Max: 100.00;
+NumeroChar();
+decimal
+(5,2) Sim
+aliquotaICMS Percentual da Alíquota do
+ICMS 5
+Min: 0.00;
+Max: 100.00;
+NumeroChar();
+decimal
+(5,2) Sim
+valorICMS Valor do ICMS em moeda
+corrente 10
+Min: 0.00;
+Max: 99999999.99;
+NumeroChar();
+decimal
+(10,2) Sim
+valorPedagio Valor do Pedágio 10
+Min: 0.00;
+Max: 99999999.99;
+NumeroChar();
+decimal
+(10,2)
+Sim
+valorTaxaEmbarque Valor da Taxa de Embarque 10
+Min: 0.00;
+Max: 99999999.99;
+NumeroChar();
+decimal
+(10,2)
+Sim
+valorTotal Valor Total 10
+Min: 0.00;
+Max: 99999999.99;
+NumeroChar();
+decimal
+(10,2)
+Sim
+nomePassageiro Nome do passageiro 50 [1..50]; string Sim
+dataNascimentoPassageiro Data de nascimento do
+passageiro 8 AAAAMMDD; date Sim
+Agência Nacional de Transportes Terrestres - ANTT
+Documento de Interface de Software - DIS
+MONITRIIP
+Página 13 de 42
+tipoDocumentoIdentificacao
+Passageiro
+Tipo de documento de
+identificação oficial com foto
+do passageiro
+No caso de viagem
+interestadual de criança até 12
+(doze) anos incompletos,
+poderá ser apresentada a
+Certidão de Nascimento em
+substituição ao documento de
+identificação oficial com foto
+1
+[1, 2, 3, 4, 5, 9]
+1 = RG;
+2 = Título de Eleitor;
+3 = Passaporte;
+4 = CNH
+5 = Certidão de Nascimento;
+9 = Outro;
+tinyint Sim
+documentoIdentificacao
+Passageiro
+Número do documento de
+identificação oficial com foto
+do passageiro
+20 [1..20]; string Sim
+cpfPassageiro CPF do passageiro 11 ValidarCPF(); string Não
+celularPassageiro Celular do passageiro 14 [10..14]; string Não
+origemEmissao
+Origem / Forma de emissão do
+bilhete adquirido pelo
+passageiro
+2
+[01, 02, 03, 04]
+01 = Presencial;
+02 = Embarcada;
+03 = Internet;
+04 = Terminal de
+autoatendimento (totem);
+tinyint Sim
+sequenciamento Código sequencial de
+ordenação 6
+Min: 0;
+Max: 999999;
+integer Sim
+idViagem
+Código Identificador da
+Viagem
+(Rodoviário Regular)
+Informações na sequência
+apresentada e separadas por
+hífen
+Data Programada da Viagem
+no ponto inicial da linha:
+AAAAMMDD
+Hora Programada da Viagem
+no ponto inicial da linha:
+HHMMSS
+Código Tipo de Viagem: NN
+00 = Não atende à
+Regularidade Mínima
+01 = Atende à Regularidade
+Mínima
+Código Sentido da Linha: N
+0 = Volta
+1 = Ida
+Prefixo da Linha SGP/SIGMA:
+8, 11 ou 12 caracteres
+33
+Rodoviário Regular
+AAAAMMDD-HHMMSSNN-N-PPPPPPPPPPPP
+Até 33 caracteres, incluindo
+os 4 hifens
+[29..33]
+string Sim
+Agência Nacional de Transportes Terrestres - ANTT
+Documento de Interface de Software - DIS
+MONITRIIP
+Página 14 de 42
+7.2. InserirLogRegistroOcorrenciaRodoviario
+7.2.1. Descrição
+O Log Registro de Ocorrência Rodoviário deve ser gerado, automaticamente, quando um
+passageiro registrar uma ocorrência em um Ponto de Registro de Ocorrências.
+A execução desse método deve ser realizada, ao menos uma vez ao dia, pelo subsistema não
+embarcado do transporte rodoviário regular.
+Os dados relativos ao Log Registro de Ocorrência Rodoviário devem ser enviados no prazo
+máximo de 24 (vinte e quatro) horas de seu registro.
+A contagem temporal do prazo limite de 24 (vinte e quatro) horas para envio do Log se inicia na
+Data/Hora do Registro da Ocorrência e se encerra na Data/Hora de Envio do Log.
+7.2.2. Parâmetros
+Parâmetro Descrição do Campo Tamanho Valor, Restrições e
+Validações Tipo Obrigatório
+idLog Identificador de Log 2 02 tinyint Sim
+cnpjEmpresaTransporte CNPJ da empresa deTransporte 14 ValidarCNPJ(); string Sim
+numeroBilheteEmbarque Número do bilhete de embarque 9 [1..9]; string Não
+nomeReclamante Nome completo do reclamante 50 [3..50]; string Sim
+documentoIdentificacao
+Reclamante
+Documento de identificação do
+reclamante 20 [1..20]; string Não
+enderecoReclamante Endereço do reclamante 180 [10..180]; string Não
+telefoneContatoReclamante Telefone de contato do reclamante 14 [10..14]; string Sim
+emailReclamante E-mail do reclamante 50 [1..50];
+ValidaEmail(); string Não
+codigoTipoOcorrencia Tipo de ocorrência 1
+[0, 1, 2, 3, 4, 5, 6, 7, 8]
+Domínio ver Item 8.1.4 tinyint Sim
+dataOcorrencia Data da ocorrência 8
+Padrão UTC
+AAAAMMDD;
+DataValida();
+date Sim
+horaOcorrencia Hora da ocorrência 6
+Padrão UTC
+HHMMSS;
+HoraValida();
+time Sim
+dataRegistroOcorrencia Data do registro da ocorrência 8
+Padrão UTC
+AAAAMMDD;
+DataValida();
+ValidaDataHora();
+date Sim
+horaRegistroOcorrencia Hora do registro da ocorrência 6
+Padrão UTC
+HHMMSS;
+HoraValida();
+ValidaDataHora();
+time Sim
+descricaoOcorrencia Descrição da ocorrência 4000 [10..4000]; string Sim
+numeroProtocolo Número do Protocolo 21 [1..21]; string Sim
+sequenciamento Código sequencial de ordenação 6
+Min: 0;
+Max: 999999; integer Sim
+Agência Nacional de Transportes Terrestres - ANTT
+Documento de Interface de Software - DIS
+MONITRIIP
+Página 15 de 42
+idViagem
+Código Identificador da Viagem
+(Rodoviário Regular)
+Informações na sequência
+apresentada e separadas por hífen
+Data Programada da Viagem no
+ponto inicial da linha:
+AAAAMMDD
+Hora Programada da Viagem no
+ponto inicial da linha:
+HHMMSS
+Código Tipo de Viagem: NN
+00 = Não atende à Regularidade
+Mínima
+01 = Atende à Regularidade
+Mínima
+Código Sentido da Linha: N
+0 = Volta
+1 = Ida
+Prefixo da Linha SGP/SIGMA:
+8, 11 ou 12 caracteres
+33
+Rodoviário Regular
+AAAAMMDD-HHMMSSNN-N-PPPPPPPPPPPP
+Até 33 caracteres, incluindo
+os 4 hifens
+[29..33]
+string Não
+7.3. InserirLogCartaoEmitidoRecargaEfetuada
+7.3.1. Descrição
+O Log Cartão Emitido / Recarga Efetuada deve ser gerado, automaticamente, quando o sistema
+de venda de cartões da empresa de transporte finalizar uma venda.
+A execução desse método deve ser realizada, ao menos uma vez ao dia, pelo subsistema não
+embarcado do transporte semiurbano regular.
+Os dados relativos ao Log Cartão Emitido / Recarga Efetuada devem ser enviados no prazo
+máximo de 24 (vinte e quatro) horas de seu registro.
+A contagem temporal do prazo limite de 24 (vinte e quatro) horas para envio do Log se inicia na
+Data/Hora da Venda e se encerra na Data/Hora de Envio do Log.
+7.3.2. Parâmetros
+Parâmetro Descrição do Campo Tamanho Valor, Restrições e
+Validações Tipo Obrigatório
+idLog Identificador de Log 2 01 tinyint Sim
+cnpjEmpresa CNPJ da empresa de transporte 14 ValidarCNPJ() string Sim
+Agência Nacional de Transportes Terrestres - ANTT
+Documento de Interface de Software - DIS
+MONITRIIP
+Página 16 de 42
+codigoCategoriaTransporte Categoria / Âmbito do transporte 2
+[01, 02]
+01 = Interestadual;
+02 = Internacional;
+tinyint Sim
+numeroCartao Número do cartão 20 [1..20]; string Sim
+codigoTipoCartao Tipo de cartão 2
+[00, 01, 02, 03]
+Domínio ver Item 8.1.5 tinyint Sim
+dataVenda Data da venda 8
+Padrão UTC
+AAAAMMDD;
+DataValida();
+ValidaDataHora();
+date Sim
+horaVenda Hora da venda 6
+Padrão UTC
+HHMMSS;
+HoraValida();
+ValidaDataHora();
+time Sim
+bonusRecarga Bônus de recarga 10
+Min: 0.00;
+Max: 99999999.99;
+NumeroChar();
+decimal
+(10,2) Sim
+valorTotalRecarga Valor total da recarga 10
+Min: 0.00;
+Max: 99999999.99;
+NumeroChar();
+decimal
+(10,2) Sim
+saldoTotalCartao Saldo total do cartão 10
+Min: 0.00;
+Max: 99999999.99;
+NumeroChar();
+decimal
+(10,2) Sim
+nomePassageiro Nome do passageiro 50 [3..50]; string Sim
+documentoIdentificacao
+Passageiro
+Documento de identificação do
+passageiro 20 [1..20]; string Sim
+cpfPassageiro CPF do passageiro 11 ValidarCPF(); string Não
+celularPassageiro Celular do passageiro 14 [10..14]; string Não
+sequenciamento Código sequencial de ordenação 6
+Min: 0;
+Max: 999999; integer Sim
+7.4. InserirLogRegistroOcorrenciaSemiUrbano
+7.4.1. Descrição
+O Log Registro de Ocorrência Semiurbano deve ser gerado, automaticamente, quando um
+passageiro registrar uma ocorrência em um Ponto de Registro de Ocorrências.
+A execução desse método deve ser realizada, ao menos uma vez ao dia, pelo subsistema não
+embarcado do transporte semiurbano regular.
+Os dados relativos ao Log Registro de Ocorrência Semiurbano devem ser enviados no prazo
+máximo de 24 (vinte e quatro) horas de seu registro.
+Agência Nacional de Transportes Terrestres - ANTT
+Documento de Interface de Software - DIS
+MONITRIIP
+Página 17 de 42
+A contagem temporal do prazo limite de 24 (vinte e quatro) horas para envio do Log se inicia na
+Data/Hora do Registro da Ocorrência e se encerra na Data/Hora de Envio do Log.
+7.4.2. Parâmetros
+Parâmetro Descrição do Campo Tamanho Valores, Restrições e
+Validações Tipo Obrigatório
+idLog Identificador de Log 2 03 tinyint Sim
+cnpjEmpresaTransporte CNPJ da empresa de transporte 14 ValidarCNPJ(); string Sim
+empresaResponsavel Nome da empresa de transporte 80 [3..80]; string Sim
+identificacaoLinha
+Identificação da linha:
+Número da Linha
+(Semiurbano Regular)
+[4]
+4
+[4]
+PadraoInvalido(); string Sim
+nomeReclamante Nome completo do reclamante 50 [3..50]; string Sim
+DocumentoIdentificacao
+Reclamante
+Documento de identificação do
+reclamante 20 [1..20]; string Não
+enderecoReclamante Endereço do reclamante 180 [10..180]; string Não
+telefoneContatoReclamante
+Telefone de contato do
+reclamante 14 [10..14]; string Sim
+emailReclamante E-mail do reclamante 50 [5..50];
+ValidaEmail(); string Não
+codigoTipoOcorrencia Tipo de ocorrência 1
+[0, 1, 2, 3, 4, 5, 6, 7, 8]
+Domínio ver Item 8.1.4 tinyint Sim
+dataOcorrencia Data da ocorrência 8
+Padrão UTC
+AAAAMMDD
+DataValida();
+ValidaDataHora();
+date Sim
+horaOcorrencia Hora da ocorrência 6
+Padrão UTC
+HHMMSS
+HoraValida();
+ValidaDataHora();
+time Sim
+dataRegistroOcorrencia Data do registro da ocorrência 8
+Padrão UTC
+AAAAMMDD
+DataValida();
+date Sim
+horaRegistroOcorrencia Hora do registro da ocorrência 6
+Padrão UTC
+HHMMSS
+HoraValida();
+time Sim
+descricaoOcorrencia Descrição da ocorrência 4000 [10..4000]; string Sim
+numeroProtocolo Número do protocolo 21 [1..21]; string Sim
+sequenciamento Código sequencial de ordenação 6
+Min: 0;
+Max: 999999; integer Sim
+Agência Nacional de Transportes Terrestres - ANTT
+Documento de Interface de Software - DIS
+MONITRIIP
+Página 18 de 42
+idViagem
+Código Identificador da Viagem
+(Semiurbano Regular)
+Informações na sequência
+apresentada e separadas por hífen
+Data Programada da Viagem no
+ponto inicial da linha:
+AAAAMMDD
+Hora Programada da Viagem no
+ponto inicial da linha:
+HHMMSS
+Código Sentido da Linha: N
+0 = Volta
+1 = Ida
+Número da Linha SGSU:
+4 caracteres
+22
+Semiurbano Regular
+AAAAMMDDHHMMSS-N-NNNN
+22 caracteres, incluindo os
+3 hifens
+[22]
+string Não
+7.5. InserirLogVelocidadeTempoLocalizacao
+7.5.1. Descrição
+O Log Velocidade, Tempo e Localização deve ser gerado, automaticamente:
+ a cada 30 segundos, no caso de transporte semiurbano regular;
+ a cada 60 segundos, no caso de transporte rodoviário fretado; ou
+ a cada 180 segundos, no caso de transporte rodoviário regular.
+O intervalo de criação do Log deve ser parametrizável, permitindo alterá-lo a qualquer tempo.
+A execução desse método deve ser realizada pelo subsistema embarcado de todos os tipos de
+transporte (rodoviário regular, rodoviário fretado, semiurbano regular).
+Os dados relativos ao Log Velocidade, Tempo e Localização devem ser enviados no prazo máximo
+de 10 (dez) horas de seu registro.
+A contagem temporal do prazo limite de 10 (dez) horas para envio do Log se inicia na Data/Hora do
+Evento e se encerra na Data/Hora de Envio do Log.
+7.5.2. Parâmetros
+Parâmetro Descrição do Campo Tamanho Valor, Restrições e
+Validações Tipo Obrigatório
+idLog Identificador de Log 2 04 tinyint Sim
+cnpjEmpresaTransporte CNPJ da empresa de transporte 14 ValidarCNPJ();
+ValidaCnpjSishab(); string Sim
+Agência Nacional de Transportes Terrestres - ANTT
+Documento de Interface de Software - DIS
+MONITRIIP
+Página 19 de 42
+placaVeiculo Placa do veículo 8
+[7..8];
+ValidaPlacaSishab(); string Sim
+velocidadeAtual Velocidade atual 3
+Min: 0;
+Max: 999; integer Sim
+distanciaPercorrida
+Quilometragem acumulada pelo
+veículo, desde o início da viagem,
+no ponto inicial da linha
+8
+Min: 0;
+Max: 99999999;
+integer Sim
+situacaoIgnicaoMotor Situação da ignição do motor
+(real ou estimada eletronicamente) 1
+[0,1]
+0 = Desligado;
+1 = Ligado;
+tinyint Não
+situacaoPortaVeiculo Situação da porta do veículo
+(real ou estimada eletronicamente) 1
+[0,1]
+0 = Fechada;
+1 = Aberta;
+tinyint Não
+latitude Latitude
+Max: 90.0;
+Min: -90.0;
+DATUM:
+SIRGAS 2000
+WGS 84
+decimal
+(23,20) Sim
+longitude Longitude
+Max: 180.0;
+Min: -180.0;
+DATUM:
+SIRGAS 2000
+WGS 84
+decimal
+(23,20) Sim
+pdop PDOP
+(Position Dilution of Precision)
+decimal
+(10,6) Sim
+dataHoraEvento Data e hora do registro da
+ocorrência
+AAAA-MM-DD
+hh:mm:ss
+Hora deve considerar
+padrão UTC
+ValidaDataHora();
+small
+datetime Sim
+imei Número IMEI do equipamento
+de transmissão 18 [15..18]; string Sim
+sequenciamento Código sequencial de ordenação 6
+Min: 0;
+Max: 999999;
+integer Sim
+Agência Nacional de Transportes Terrestres - ANTT
+Documento de Interface de Software - DIS
+MONITRIIP
+Página 20 de 42
+idViagem
+Código Identificador da Viagem
+(Rodoviário Regular)
+Informações na sequência
+apresentada e separadas por hífen
+Data Programada da Viagem no
+ponto inicial da linha:
+AAAAMMDD
+Hora Programada da Viagem no
+ponto inicial da linha:
+HHMMSS
+Código Tipo de Viagem: NN
+00 = Não atende à Regularidade
+Mínima
+01 = Atende à Regularidade Mínima
+Código Sentido da Linha: N
+0 = Volta
+1 = Ida
+Prefixo da Linha SGP/SIGMA:
+8, 11 ou 12 caracteres
+33
+Rodoviário Regular
+AAAAMMDDHHMMSS-NN-NPPPPPPPPPPPP
+Até 33 caracteres,
+incluindo os 4 hifens
+[29..33]
+string Sim Código Identificador da Viagem
+(Rodoviário Fretado)
+Número da Autorização/Licença de
+Viagem SISAUT/SISHAB:
+Até 13 caracteres
+Rodoviário Fretado
+[1..13]
+Código Identificador da Viagem
+(Semiurbano Regular)
+Informações na sequência
+apresentada e separadas por hífen
+Data Programada da Viagem no
+ponto inicial da linha:
+AAAAMMDD
+Hora Programada da Viagem no
+ponto inicial da linha:
+HHMMSS
+Código Sentido da Linha: N
+0 = Volta
+1 = Ida
+Número da Linha SGSU:
+4 caracteres
+Semiurbano Regular
+AAAAMMDDHHMMSS-N-NNNN
+22 caracteres, incluindo
+os 3 hifens
+[22]
+Agência Nacional de Transportes Terrestres - ANTT
+Documento de Interface de Software - DIS
+MONITRIIP
+Página 21 de 42
+7.6. InserirLogJornadaTrabalhoMotorista
+7.6.1. Descrição
+Para registro da jornada de trabalho do(s) motorista(s), deve ser gerado, a cada trecho da viagem
+executado por um mesmo motorista, 1 (um) Log Jornada de Trabalho do Motorista (Início do
+Período de Condução) e 1 (um) Log Jornada de Trabalho do Motorista (Fim do Período de
+Condução).
+O registro deve ser gerado, automaticamente, sempre que o motorista se identificar.
+O primeiro Log a ser gerado na viagem, relativo ao Log Jornada de Trabalho (Início do Período
+de Condução) do motorista que inicia a viagem, deve ocorrer, quando do início do deslocamento
+do veículo, no ponto inicial da linha, após o embarque dos passageiros.
+O último Log a ser gerado na viagem, relativo ao Log Jornada de Trabalho (Fim do Período de
+Condução) do motorista que finaliza a viagem, deve ocorrer, quando da parada do veículo, no
+ponto final da linha, antes do desembarque dos passageiros.
+A execução desse método deve ser realizada pelo subsistema embarcado de todos os tipos de
+transporte (rodoviário regular, rodoviário fretado, semiurbano regular).
+Os dados relativos ao Log Jornada de Trabalho do Motorista devem ser enviados no prazo máximo
+de 10 (dez) horas de seu registro.
+A contagem temporal do prazo limite de 10 (dez) horas para envio do Log se inicia na Data/Hora
+do Evento e se encerra na Data/Hora de Envio do Log.
+7.6.2. Parâmetros
+Parâmetro Descrição do Campo Tamanho Valor, Restrições e
+Validações Tipo Obrigatório
+idLog Identificador de Log 2 05 tinyint Sim
+cnpjEmpresaTransporte CNPJ da empresa de transporte 14 ValidarCNPJ();
+ValidaCnpjSishab(); string Sim
+placaVeiculo Placa do veículo 8
+[7..8];
+ValidaPlacaSishab(); string Sim
+cpfMotorista CPF do motorista 11 ValidarCPF();
+ValidaCpfSishab(); string Sim
+tipoRegistroEvento
+Tipo de registro do evento:
+0 = Fim do período de condução;
+1 = Início do período de condução;
+Par [Início, Fim] possível:
+[1, 0]
+1 [0,1] tinyint Sim
+Agência Nacional de Transportes Terrestres - ANTT
+Documento de Interface de Software - DIS
+MONITRIIP
+Página 22 de 42
+latitude Latitude
+Max: 90.0;
+Min: -90.0;
+DATUM:
+SIRGAS 2000
+WGS 84
+decimal
+(23,20) Sim
+longitude Longitude
+Max: 180.0;
+Min: -180.0;
+DATUM:
+SIRGAS 2000
+WGS 84
+decimal
+(23,20) Sim
+pdop PDOP
+(Position Dilution of Precision)
+decimal
+(10,6) Sim
+dataHoraEvento Data e hora do evento
+AAAA-MM-DD
+hh:mm:ss
+Hora deve considerar
+padrão UTC
+ValidaDataHora();
+small
+datetime Sim
+imei Número IMEI do equipamento
+de transmissão 18 [15..18]; string Sim
+sequenciamento Código sequencial de ordenação 6
+Min: 0;
+Max: 999999; integer Sim
+idViagem
+Código Identificador da Viagem
+(Rodoviário Regular)
+Informações na sequência
+apresentada e separadas por hífen
+Data Programada da Viagem no
+ponto inicial da linha:
+AAAAMMDD
+Hora Programada da Viagem no
+ponto inicial da linha:
+HHMMSS
+Código Tipo de Viagem: NN
+00 = Não atende à Regularidade
+Mínima
+01 = Atende à Regularidade
+Mínima
+Código Sentido da Linha: N
+0 = Volta
+1 = Ida
+Prefixo da Linha SGP/SIGMA:
+8, 11 ou 12 caracteres
+33
+Rodoviário Regular
+AAAAMMDDHHMMSS-NN-NPPPPPPPPPPPP
+Até 33 caracteres,
+incluindo os 4 hifens
+[29..33]
+string Sim
+Código Identificador da Viagem
+(Rodoviário Fretado)
+Número da Autorização/Licença de
+Viagem SISAUT/SISHAB:
+Até 13 caracteres
+Rodoviário Fretado
+[1..13]
+Agência Nacional de Transportes Terrestres - ANTT
+Documento de Interface de Software - DIS
+MONITRIIP
+Página 23 de 42
+Código Identificador da Viagem
+(Semiurbano Regular)
+Informações na sequência
+apresentada e separadas por hífen
+Data Programada da Viagem no
+ponto inicial da linha:
+AAAAMMDD
+Hora Programada da Viagem no
+ponto inicial da linha:
+HHMMSS
+Código Sentido da Linha: N
+0 = Volta
+1 = Ida
+Número da Linha SGSU:
+4 caracteres
+Semiurbano Regular
+AAAAMMDDHHMMSS-N-NNNN
+22 caracteres, incluindo
+os 3 hifens
+[22]
+7.7. InserirLogDetectorParada
+7.7.1. Descrição
+O Log Detector de Parada deve ser gerado sempre que houver uma parada relevante do veículo
+durante a viagem.
+No caso de parada que se dê por mais de um motivo, deverá ser gerado um registro de parada
+específico para cada Motivo de Parada.
+A execução desse método deve ser realizada pelo subsistema embarcado de todos os tipos de
+transporte (rodoviário regular, rodoviário fretado, semiurbano regular).
+Os dados relativos ao Log Detector de Parada devem ser enviados no prazo máximo de 10 (dez)
+horas de seu registro.
+A contagem temporal do prazo limite de 10 (dez) horas para envio do Log se inicia na Data/Hora
+do Evento e se encerra na Data/Hora de Envio do Log.
+7.7.2. Parâmetros
+Parâmetro Descrição do Campo Tamanho Valor, Restrições e
+Validações Tipo Obrigatório
+idLog Identificador de Log 2 06 tinyint Sim
+cnpjEmpresaTransporte CNPJ da empresa de transporte 14 ValidarCNPJ();
+ValidaCnpjSishab() string Sim
+placaVeiculo Placa do veículo 8
+[7..8];
+ValidaPlacaSishab(); string Sim
+Agência Nacional de Transportes Terrestres - ANTT
+Documento de Interface de Software - DIS
+MONITRIIP
+Página 24 de 42
+codigoMotivoParada Motivo da parada ou evento 2
+[01, 02, 03, 04, 05, 06, 11,
+12, 13, 14, 15, 21, 22, 23,
+24, 25, 26, 27, 99]
+Domínio ver Item 8.1.6
+tinyint Sim
+latitude Latitude
+Max: 90.0;
+Min: -90.0;
+DATUM:
+SIRGAS 2000
+WGS 84
+decimal
+(23,20) Sim
+longitude Longitude
+Max: 180.0;
+Min: -180.0;
+DATUM:
+SIRGAS 2000
+WGS 84
+decimal
+(23,20) Sim
+pdop PDOP
+(Position Dilution of Precision)
+decimal
+(10,6) Sim
+dataHoraEvento Data e hora do evento
+AAAA-MM-DD
+hh:mm:ss
+Hora deve considerar
+padrão UTC
+ValidaDataHora();
+small
+datetime Sim
+imei Número IMEI do equipamento
+de transmissão 18 [15..18]; string Sim
+sequenciamento Código sequencial de ordenação 6
+Min: 0;
+Max: 999999; integer Sim
+idViagem
+Código Identificador da Viagem
+(Rodoviário Regular)
+Informações na sequência
+apresentada e separadas por hífen
+Data Programada da Viagem no
+ponto inicial da linha:
+AAAAMMDD
+Hora Programada da Viagem no
+ponto inicial da linha:
+HHMMSS
+Código Tipo de Viagem: NN
+00 = Não atende à Regularidade
+Mínima
+01 = Atende à Regularidade
+Mínima
+Código Sentido da Linha: N
+0 = Volta
+1 = Ida
+Prefixo da Linha no SGP/SIGMA:
+8, 11 ou 12 caracteres
+33
+Rodoviário Regular
+AAAAMMDDHHMMSS-NN-NPPPPPPPPPPPP
+Até 33 caracteres,
+incluindo os 4 hifens
+[29..33]
+string Sim
+Agência Nacional de Transportes Terrestres - ANTT
+Documento de Interface de Software - DIS
+MONITRIIP
+Página 25 de 42
+7.8. InserirLogInicioFimViagemRegular
+7.8.1. Descrição
+O Log Início/Fim de Viagem Regular deve ser gerado, automaticamente, quando o motorista ou
+um funcionário da empresa de transporte iniciar/finalizar uma viagem através de terminal integrado
+ao subsistema embarcado.
+A execução desse método deve ser realizada pelo subsistema embarcado dos transportes
+rodoviário regular e semiurbano regular.
+Os dados relativos ao Log Início/Fim de Viagem Regular devem ser enviados no prazo máximo
+de 10 (dez) horas de seu registro.
+A contagem temporal do prazo limite de 10 (dez) horas para envio do Log se inicia na Data/Hora
+do Evento e se encerra na Data/Hora de Envio do Log.
+7.8.2. Parâmetros
+Parâmetro Descrição do Campo Tamanho Valor, Restrições eValidações Tipo Obrigatório
+idLog Identificador de Log 2 07 tinyint Sim
+Código Identificador da Viagem
+(Rodoviário Fretado)
+Número da Autorização/Licença
+de Viagem SISAUT/SISHAB:
+Até 13 caracteres
+Rodoviário Fretado
+[1..13]
+Código Identificador da Viagem
+(Semiurbano Regular)
+Informações na sequência
+apresentada e separadas por hífen
+Data Programada da Viagem no
+ponto inicial da linha:
+AAAAMMDD
+Hora Programada da Viagem no
+ponto inicial da linha:
+HHMMSS
+Código Sentido da Linha: N
+0 = Volta
+1 = Ida
+Número da Linha SGSU:
+4 caracteres
+Semiurbano Regular
+AAAAMMDDHHMMSS-N-NNNN
+22 caracteres, incluindo os
+3 hifens
+[22]
+Agência Nacional de Transportes Terrestres - ANTT
+Documento de Interface de Software - DIS
+MONITRIIP
+Página 26 de 42
+cnpjEmpresaTransporte CNPJ da empresa de transporte 14 ValidarCNPJ();
+ValidaCnpjSishab(); string Sim
+placaVeiculo Placa do veículo 8
+[7..8];
+RegistroDuplicado();
+ValidaPlacaSishab();
+string Sim
+cpfMotorista CPF do motorista 11 ValidarCPF();
+ValidaCpfSishab(); string Sim
+identificacaoLinha
+Identificação da linha:
+Número da Linha
+(Semiurbano Regular)
+[4]
+Prefixo da Linha
+(Rodoviário Regular)
+[8], [11] ou [12]
+12
+[4..12];
+PadraoInvalido();
+PrefixoInvalido();
+RegistroDuplicado();
+string Sim
+codigoTipoViagem Tipo de viagem 2
+[00, 01]
+Domínio ver Item 8.1.2
+RegistroDuplicado();
+tinyint Sim
+dataProgramadaViagem Data programada da viagem no
+ponto inicial da linha 8
+Padrão UTC
+AAAAMMDD;
+DataValida();
+NumeroChar = 8;
+RegistroDuplicado()
+ValidaInicio();
+date Sim
+horaProgramadaViagem Hora programada da viagem no
+ponto inicial da linha 6
+Padrão UTC
+HHMMSS
+HoraValida();
+NumeroChar = 6;
+RegistroDuplicado();
+time Sim
+tipoRegistroViagem
+Tipo de Registro de Viagem:
+0 = Fim de viagem;
+1 = Início de viagem;
+2 = Fim de viagem com
+transbordo;
+3 = Início de viagem de
+transbordo;
+Pares [Início,Fim] possíveis:
+[1,0]; [1,2]; [3,0]; [3,2]
+1
+[0, 1, 2, 3]
+Ver item 8.1.7.
+RegistroDuplicado();
+tinyint Sim
+codigoSentidoLinha Sentido da linha 1
+[0, 1]
+0 = Volta;
+1 = Ida;
+RegistroDuplicado();
+tinyint Sim
+Agência Nacional de Transportes Terrestres - ANTT
+Documento de Interface de Software - DIS
+MONITRIIP
+Página 27 de 42
+latitude Latitude
+Max: 90.0;
+Min: -90.0;
+DATUM:
+SIRGAS 2000
+WGS 84
+decimal
+(23,20) Sim
+longitude Longitude
+Max: 180.0;
+Min: -180.0
+DATUM:
+SIRGAS 2000
+WGS 84
+decimal
+(23,20) Sim
+pdop PDOP
+(Position Dilution of Precision)
+decimal
+(10,6) Sim
+dataHoraEvento Data e hora do evento
+AAAA-MM-DD
+hh:mm:ss
+Hora deve considerar padrão
+UTC
+ValidaDataHora();
+small
+datetime Sim
+imei Número IMEI do equipamento
+de transmissão 18 [15..18]; string Sim
+sequenciamento Código sequencial de ordenação 6
+Min: 0;
+Max: 999999; integer Sim
+idViagem
+Código Identificador da Viagem
+(Rodoviário Regular)
+Informações na sequência
+apresentada e separadas por
+hífen
+Data Programada da Viagem no
+ponto inicial da linha:
+AAAAMMDD
+Hora Programada da Viagem no
+ponto inicial da linha:
+HHMMSS
+Código Tipo de Viagem: NN
+00 = Não atende à Regularidade
+Mínima
+01 = Atende à Regularidade
+Mínima
+Código Sentido da Linha: N
+0 = Volta
+1 = Ida
+Prefixo da Linha no
+SGP/SIGMA:
+8, 11 ou 12 caracteres
+33
+Rodoviário Regular
+AAAAMMDD-HHMMSS-NNN-PPPPPPPPPPPP
+Até 33 caracteres, incluindo os 4
+hifens
+[29..33]
+string Sim
+Agência Nacional de Transportes Terrestres - ANTT
+Documento de Interface de Software - DIS
+MONITRIIP
+Página 28 de 42
+Código Identificador da Viagem
+(Semiurbano Regular)
+Informações na sequência
+apresentada e separadas por
+hífen
+Data Programada da Viagem no
+ponto inicial da linha:
+AAAAMMDD
+Hora Programada da Viagem no
+ponto inicial da linha:
+HHMMSS
+Código Sentido da Linha: N
+0 = Volta
+1 = Ida
+Número da Linha SGSU:
+4 caracteres
+Semiurbano Regular
+AAAAMMDD-HHMMSS-NNNNN
+22 caracteres, incluindo os 3
+hifens
+[22]
+7.9. InserirLogInicioFimViagemFretado
+7.9.1. Descrição
+O Log Início/Fim de Viagem Fretado deve ser gerado, automaticamente, quando o motorista ou
+um funcionário da empresa de transporte iniciar/finalizar cada um dos sentidos de uma viagem
+(ida e volta) através de terminal integrado ao subsistema embarcado.
+A execução desse método deve ser realizada pelo subsistema embarcado do transporte
+rodoviário fretado.
+Os dados relativos ao Log Início/Fim de Viagem Fretado devem ser enviados no prazo máximo
+de 10 (dez) horas de seu registro.
+A contagem temporal do prazo limite de 10 (dez) horas para envio do Log se inicia na Data/Hora
+do Evento e se encerra na Data/Hora de Envio do Log.
+7.9.2. Parâmetros
+Parâmetro Descrição do Campo Tamanho Valor, Restrições e
+Validações Tipo Obrigatório
+idLog Identificador de Log 2 08 tinyint Sim
+cnpjEmpresaTransporte CNPJ da empresa de transporte 14 ValidarCNPJ( );
+ValidaCnpjSishab(); string Sim
+Agência Nacional de Transportes Terrestres - ANTT
+Documento de Interface de Software - DIS
+MONITRIIP
+Página 29 de 42
+placaVeiculo Placa do veículo 8
+[7..8];
+RegistroDuplicado();
+ValidaPlacaSishab();
+string Sim
+cpfMotorista CPF do motorista 11 ValidarCPF();
+ValidaCpfSishab(); string Sim
+autorizacaoViagem
+Número da Autorização/Licença
+de Viagem.
+Fretamento (Eventual/Turístico)
+SISAUT: NNNNNNNNNNNNN
+Fretamento (Contínuo)
+SISAUT: NNNAAAA
+Fretamento
+(Eventual/Turístico)
+(Contínuo)
+(Excepcional)
+SISHAB: LLAAAANNNNNNN
+13
+[1..13];
+Dominio();
+AutorizacaoInvalida();
+RegistroDuplicado();
+string Sim
+tipoRegistroViagem
+Tipo de Registro de Viagem:
+0 = Fim de viagem;
+1 = Início de viagem;
+2 = Fim de viagem com
+transbordo;
+3 = Início de viagem de
+transbordo;
+Pares [Início,Fim] possíveis:
+[1,0]; [1,2]; [3,0]; [3,2]
+1
+[0, 1, 2, 3]
+Ver item 8.1.7.
+RegistroDuplicado();
+tinyint Sim
+sentidoLinha
+Sentido da Viagem do
+Fretamento, conforme
+Autorização/Licença de Viagem
+autorizada pela ANTT
+1
+[0, 1]
+0 = Volta;
+1 = Ida;
+RegistroDuplicado();
+tinyint Sim
+latitude Latitude
+Max: 90.0;
+Min: -90.0;
+DATUM:
+SIRGAS 2000
+WGS 84
+decimal
+(23,20) Sim
+longitude Longitude
+Max: 180.0;
+Min: -180.0
+DATUM:
+SIRGAS 2000
+WGS 84
+decimal
+(23,20) Sim
+pdop PDOP
+(Position Dilution of Precision)
+decimal
+(10,6) Sim
+Agência Nacional de Transportes Terrestres - ANTT
+Documento de Interface de Software - DIS
+MONITRIIP
+Página 30 de 42
+dataHoraEvento Data e hora do evento
+AAAA-MM-DD
+hh:mm:ss
+Hora deve considerar
+padrão UTC
+ValidaDataHora();
+small
+datetime Sim
+imei Número IMEI do equipamento
+de transmissão 18 [15..18]; string Sim
+sequenciamento Código sequencial de ordenação 6
+Min: 0;
+Max: 999999; integer Sim
+idViagem
+Código Identificador da Viagem
+(Rodoviário Fretado)
+Número da Autorização/Licença
+de Viagem SISAUT/SISHAB:
+Até 13 caracteres
+13
+Rodoviário Fretado
+[1..13]
+string Sim
+7.10. InserirLogBilheteEmbarque
+7.10.1. Descrição
+O Log Bilhete de Embarque (check-in) deve ser gerado, automaticamente, no momento do
+embarque, quando da detecção de uma leitura válida.
+O Log Bilhete de Embarque (no-show) deve ser gerado, automaticamente, quando o motorista ou
+um funcionário da empresa de transporte encerrar o embarque, através de terminal integrado ao
+subsistema embarcado, na localidade em que o passageiro deveria ter embarcado, conforme local
+de embarque previsto no bilhete de passagem, ou, automaticamente, imediatamente após a saída
+do veículo da localidade em que o passageiro deveria ter embarcado, conforme local de embarque
+previsto no bilhete de passagem.
+No caso de erro de leitura do código de barras / QR Code do bilhete, a empresa de transporte de
+passageiros deverá disponibilizar meio de inserção de dados de contingência para o registro dos
+seguintes campos:
+ Número de série do equipamento fiscal emissor;
+ Número do bilhete de embarque;
+ Prefixo de Identificação da Linha;
+ Data prevista para o início da vigem; e
+ Hora prevista para o início da viagem.
+Em contingência, para o campo número de série do equipamento fiscal emissor, poderão ser
+utilizados os seguintes códigos:
+ 000013: Para Nota Fiscal Bilhete de Passagem Rodoviário - hipótese de emissão manual
+(com posterior lançamento no sistema fiscal utilizado, conforme a Resolução que dispõe
+sobre as condições gerais relativas à venda de bilhetes de passagem);
+ 000060: Para Cupom de Embarque Bilhete de Passagem; ou
+ 000063: Para Bilhete de Passagem Eletrônico.
+Agência Nacional de Transportes Terrestres - ANTT
+Documento de Interface de Software - DIS
+MONITRIIP
+Página 31 de 42
+Todos os campos são obrigatórios, quando da leitura automática do código de barras / QR Code
+do Bilhete de Passagem.
+A execução desse método deve ser realizada pelo subsistema embarcado do transporte
+rodoviário regular.
+Os dados relativos ao Log Bilhete de Embarque (check-in) e ao Log Bilhete de Embarque (noshow) devem ser enviados no prazo máximo de 10 (dez) horas de seu registro.
+A contagem temporal do prazo limite de 10 (dez) horas para envio do Log se inicia na Data/Hora
+do Evento e se encerra na Data/Hora de Envio do Log.
+7.10.2. Parâmetros (bilheteEmbarque)
+Parâmetro Descrição do Campo Tamanho Valor, Restrições e
+Validações Tipo Obrigatório
+idLog Identificador de Log 2 09 tinyint Sim
+cnpjEmpresaTransporte CNPJ da empresa de transporte 14 ValidarCNPJ( );
+ValidaCnpjSishab() string Sim
+placaVeiculo Placa do veículo 8
+[7..8];
+ValidaPlacaSishab(); string Sim
+cpfMotorista CPF do motorista 11 ValidarCPF();
+ValidaCpfSishab(); string Sim
+latitude Latitude
+Max: 90.0;
+Min: -90.0;
+DATUM:
+SIRGAS 2000
+WGS 84
+decimal
+(23,20) Sim
+longitude Longitude
+Max: 180.0;
+Min: -180.0
+DATUM:
+SIRGAS 2000
+WGS 84
+decimal
+(23,20) Sim
+pdop PDOP
+(Position Dilution of Precision)
+decimal
+(10,6) Sim
+dataHoraEvento Data e hora do embarque / não
+embarque
+AAAA-MM-DD
+hh:mm:ss
+Hora deve considerar
+padrão UTC
+ValidaDataHora();
+small
+datetime Sim
+imei Número IMEI do equipamento
+de transmissão 18 [15..18]; string Sim
+Agência Nacional de Transportes Terrestres - ANTT
+Documento de Interface de Software - DIS
+MONITRIIP
+Página 32 de 42
+sequenciamento Código sequencial de ordenação 6
+Min: 0;
+Max: 999999; integer Sim
+idViagem
+Código Identificador da Viagem
+(Rodoviário Regular)
+Informações na sequência
+apresentada e separadas por hífen
+Data Programada da Viagem no
+ponto inicial da linha:
+AAAAMMDD
+Hora Programada da Viagem no
+ponto inicial da linha:
+HHMMSS
+Código Tipo de Viagem: NN
+00 = Não atende à Regularidade
+Mínima
+01 = Atende à Regularidade
+Mínima
+Código Sentido da Linha: N
+0 = Volta
+1 = Ida
+Prefixo da Linha SGP/SIGMA:
+8, 11 ou 12 caracteres
+33
+Rodoviário Regular
+AAAAMMDDHHMMSS-NN-NPPPPPPPPPPPP
+Até 33 caracteres,
+incluindo os 4 hifens
+[29..33]
+string Sim
+7.10.3. Parâmetros (bilhetes)
+Parâmetro Descrição do Campo Tamanho Valor, Restrições e
+Validações Tipo Obrigatório
+numeroEquipamento
+Em contingência
+(6 caracteres)
+Número de série do equipamento
+fiscal emissor
+(20 caracteres)
+Chave de acesso do BP-e
+(44 caracteres)
+44
+[6]
+[20]
+[44]
+NumeroChar();
+string Sim
+numeroBilheteEmbarque Número do bilhete de embarque 9 [1..9]; string Sim
+identificacaoLinha
+Identificação da linha:
+Prefixo da Linha
+(Rodoviário Regular)
+[8], [11] ou [12]
+12
+[8..12];
+PadraoInvalido();
+PrefixoInvalido();
+string Sim
+Agência Nacional de Transportes Terrestres - ANTT
+Documento de Interface de Software - DIS
+MONITRIIP
+Página 33 de 42
+dataPrevistaViagem
+Data prevista para o início da
+viagem do passageiro constante
+no bilhete
+8
+Padrão UTC
+AAAAMMDD;
+DataValida( );
+date Sim
+horaPrevistaViagem
+Hora prevista para o início da
+viagem do passageiro constante
+no bilhete
+6
+Padrão UTC
+HHMMSS;
+HoraValida( );
+time Sim
+codigoDesconto Motivo do desconto 2
+[00, 01, 02, 03, 04, 05, 06,
+07, 08, 09]
+Domínio ver Item 8.1.3
+tinyint Não
+valorTarifa Valor da Tarifa / Preço do Serviço 10
+Min: 0.00;
+Max: 99999999.99;
+NumeroChar();
+decimal
+(10,2) Não
+percentualDesconto Percentual de desconto 5
+Min: 0.00;
+Max: 100.00;
+NumeroChar();
+decimal
+(5,2) Não
+celularPassageiro Número de celular do passageiro 14 [10..14]; string Não
+idPontoOrigemViagem
+Código IBGE do Município que é
+o Município de embarque do
+passageiro
+Informar o código 9999999 para
+localidade de embarque no
+exterior
+7 [7] integer Sim
+idLocalEmbarque
+Passageiro
+Código de instalação, cadastrada e
+habilitada no sistema da ANTT e
+que corresponde ao local de
+embarque do passageiro
+7 [7] string Sim
+idPontoDestinoViagem
+Código IBGE do Município que é
+o Município de desembarque do
+passageiro
+Informar o código 9999999 para
+localidade de desembarque no
+exterior
+7 [7] integer Sim
+idLocalDesembarque
+Passageiro
+Código de instalação, cadastrada e
+habilitada no sistema da ANTT e
+que corresponde ao local de
+desembarque do passageiro
+7 [7] string Sim
+Agência Nacional de Transportes Terrestres - ANTT
+Documento de Interface de Software - DIS
+MONITRIIP
+Página 34 de 42
+codigoEmbarque
+Código identificador de embarque
+ou de não embarque
+0 = Código de não embarque;
+1 = Código de embarque;
+1
+[0,1]
+0 = não embarque (no-show);
+1 = embarque (check-in);
+tinyint Sim
+sequenciamento Código sequencial de ordenação 6
+Min: 0;
+Max: 999999; integer Sim
+idViagem
+Código Identificador da Viagem
+(Rodoviário Regular)
+Informações na sequência
+apresentada e separadas por hífen
+Data Programada da Viagem no
+ponto inicial da linha:
+AAAAMMDD
+Hora Programada da Viagem no
+ponto inicial da linha:
+HHMMSS
+Código Tipo de Viagem: NN
+00 = Não atende à Regularidade
+Mínima
+01 = Atende à Regularidade
+Mínima
+Código Sentido da Linha: N
+0 = Volta
+1 = Ida
+Prefixo da Linha SGP/SIGMA:
+8, 11 ou 12 caracteres
+33
+Rodoviário Regular
+AAAAMMDD-HHMMSSNN-N-PPPPPPPPPPPP
+Até 33 caracteres, incluindo
+os 4 hifens
+[29..33]
+string Sim
+7.11. InserirLogLeitorCartaoRFID
+7.11.1. Descrição
+O Log Leitor Cartão de Embarque RFID deve ser gerado, automaticamente, no momento do
+embarque, quando da detecção de uma leitura válida.
+A execução desse método deve ser realizada pelo subsistema embarcado do transporte
+semiurbano regular.
+Os dados relativos ao Log Leitor Cartão de Embarque RFID devem ser enviados no prazo máximo
+de 10 (dez) horas de seu registro.
+A contagem temporal do prazo limite de 10 (dez) horas para envio do Log se inicia na Data/Hora de
+Abertura da Porta (Data/Hora do Embarque) e se encerrar na Data/Hora de Envio do Log.
+Agência Nacional de Transportes Terrestres - ANTT
+Documento de Interface de Software - DIS
+MONITRIIP
+Página 35 de 42
+7.11.2. Parâmetros (viagem)
+Parâmetro Descrição do Campo Tamanho Valor, Restrições e
+Validações Tipo Obrigatório
+idLog Identificador de Log 2 10 tinyint Sim
+cnpjEmpresaTransporte CNPJ da empresa de transporte 14 ValidarCNPJ();
+ValidaCnpjSishab(); string Sim
+placaVeiculo Placa do veículo 8
+[7..8];
+ValidaPlacaSishab(); string Sim
+latitude Latitude
+Max: 90.0;
+Min: -90.0;
+DATUM:
+SIRGAS 2000
+WGS 84
+decimal
+(23,20) Sim
+longitude Longitude
+Max: 180.0;
+Min: -180.0;
+DATUM:
+SIRGAS 2000
+WGS 84
+decimal
+(23,20) Sim
+pdop PDOP
+(Position Dilution of Precision)
+decimal
+(10,6) Sim
+dataHoraAberturaPorta Data e hora do embarque
+AAAA-MM-DD
+hh:mm:ss
+Hora deve considerar
+padrão UTC
+ValidaDataHora();
+small
+datetime Sim
+imei Número IMEI do equipamento
+de transmissão 18 [15..18]; string Sim
+sequenciamento Código sequencial de ordenação 6
+Min: 0;
+Max: 999999; integer Sim
+idViagem
+Código Identificador da Viagem
+(Semiurbano Regular)
+Informações na sequência
+apresentada e separadas por hífen
+Data Programada da Viagem no
+ponto inicial da linha:
+AAAAMMDD
+Hora Programada da Viagem no
+ponto inicial da linha:
+HHMMSS
+Código Sentido da Linha: N
+0 = Volta
+1 = Ida
+Número da Linha SGSU:
+4 caracteres
+22
+Semiurbano Regular
+AAAAMMDDHHMMSS-N-NNNN
+22 caracteres, incluindo
+os 3 hifens
+[22]
+string Sim
+Agência Nacional de Transportes Terrestres - ANTT
+Documento de Interface de Software - DIS
+MONITRIIP
+Página 36 de 42
+7.11.3. Parâmetros (cartões)
+Parâmetro Descrição do Campo Tamanho Valor, Restrições e
+Validações Tipo Obrigatório
+numeroCartao Número do cartão 20 [1..20]; string Sim
+codigoTipoCartao Tipo de cartão 2
+[00, 01, 02, 03]
+Domínio ver Item 8.1.5 tinyint Sim
+valorTarifa Valor debitado (tarifa) 10
+Min: 0.00;
+Max: 99999999.99;
+NumeroChar();
+decimal
+(10,2) Sim
+sequenciamento Código sequencial de ordenação 6
+Min: 0;
+Max: 999999; integer Sim
+idViagem
+Código Identificador da Viagem
+(Semiurbano Regular)
+Informações na sequência
+apresentada e separadas por hífen
+Data Programada da Viagem no
+ponto inicial da linha:
+AAAAMMDD
+Hora Programada da Viagem no
+ponto inicial da linha:
+HHMMSS
+Código Sentido da Linha: N
+0 = Volta
+1 = Ida
+Número da Linha SGSU:
+4 caracteres
+22
+Semiurbano Regular
+AAAAMMDDHHMMSS-N-NNNN
+22 caracteres, incluindo
+os 3 hifens
+[22]
+string Sim
+7.12. InserirLogCancelarPassagem
+7.12.1. Descrição
+Realiza a comunicação dos bilhetes cancelados durante um determinado período.
+A execução desse método deve ser realizada, ao menos uma vez ao dia, pelo subsistema não
+embarcado do transporte rodoviário regular.
+Os dados relativos ao Log Cancelar Passagem devem ser enviados no prazo máximo de 24 (vinte
+e quatro) horas de seu registro.
+A contagem temporal do prazo limite de 24 (vinte e quatro) horas para envio do Log se inicia na
+Data/Hora de Cancelamento do Bilhete e se encerra na Data/Hora de Envio do Log.
+Agência Nacional de Transportes Terrestres - ANTT
+Documento de Interface de Software - DIS
+MONITRIIP
+Página 37 de 42
+7.12.2. Parâmetros
+Parâmetro Descrição do Campo Tamanho Valor, Restrições e
+Validações Tipo Obrigatório
+idLog Identificador de Log 2 11 tinyint Sim
+cnpjEmpresaTransporte CNPJ da empresa de transporte 14 ValidarCNPJ(); string Sim
+numeroBilheteEmbarque Número do bilhete de
+embarque que será cancelado 9 [1..9]; string Sim
+identificacaoLinha
+Identificação da linha:
+Prefixo da Linha
+(Rodoviário Regular)
+[8], [11] ou [12]
+12 [8..12];
+PadraoInvalido();
+string Sim
+dataViagem Data de início da viagem do
+passageiro constante no bilhete 8
+Padrão UTC
+AAAAMMDD;
+DataValida();
+date Sim
+horaViagem Hora de início da viagem do
+passageiro constante no bilhete 6
+Padrão UTC
+HHMMSS;
+HoraValida();
+time Sim
+codigoMotivoCancelamento Motivo do cancelamento do
+bilhete 1
+[1, 2, 3]
+1 = Reembolso;
+2 = Remarcação;
+3 = Transferência de
+titularidade;
+tinyint Sim
+dataHoraCancelamento Data e hora do registro do
+cancelamento do bilhete
+AAAA-MM-DD
+hh:mm:ss
+Hora deve considerar
+padrão UTC
+ValidaDataHora();
+small
+datetime Sim
+numeroNovoBilheteEmbarque Novo número do bilhete de
+embarque gerado 9 [1..9]; string Não
+sequenciamento Código sequencial de
+ordenação 6
+Min: 0;
+Max: 999999; integer Sim
+Agência Nacional de Transportes Terrestres - ANTT
+Documento de Interface de Software - DIS
+MONITRIIP
+Página 38 de 42
+idViagem
+Código Identificador da
+Viagem
+(Rodoviário Regular)
+Informações na sequência
+apresentada e separadas por
+hífen
+Data Programada da Viagem
+no ponto inicial da linha:
+AAAAMMDD
+Hora Programada da Viagem
+no ponto inicial da linha:
+HHMMSS
+Código Tipo de Viagem: NN
+00 = Não atende à
+Regularidade Mínima
+01 = Atende à Regularidade
+Mínima
+Código Sentido da Linha: N
+0 = Volta
+1 = Ida
+Prefixo da Linha SGP/SIGMA:
+8, 11 ou 12 caracteres
+33
+Rodoviário Regular
+AAAAMMDDHHMMSS-NN-NPPPPPPPPPPPP
+Até 33 caracteres,
+incluindo os 4 hifens
+[29..33]
+string Sim
+7.13. InserirLogReembolsoCartao
+7.13.1. Descrição
+Permite o registro de reembolso de créditos de um determinado cartão.
+A execução desse método deve ser realizada, ao menos uma vez ao dia, pelo subsistema não
+embarcado do transporte semiurbano regular.
+Não há prazo para o envio dos dados relativos ao Log Reembolso de Crédito do Cartão, podendo
+os dados serem enviados a qualquer momento.
+7.13.2. Parâmetros
+Parâmetro Descrição do Campo Tamanho Valor, Restrições e
+Validações Tipo Obrigatório
+idLog Identificador de Log 2 12 tinyint Sim
+numeroCartao Número do cartão que está sendo
+reembolsado 20 [1..20]; string Sim
+Agência Nacional de Transportes Terrestres - ANTT
+Documento de Interface de Software - DIS
+MONITRIIP
+Página 39 de 42
+codigoTipoCartao Tipo de cartão 2
+[00, 01, 02, 03]
+Domínio ver Item 8.1.5 tinyint Sim
+dataHoraReembolso Data e hora do reembolso
+AAAA-MM-DD
+hh:mm:ss
+Hora deve considerar
+padrão UTC
+ValidaDataHora();
+small
+datetime Sim
+codigoMotivoReembolso Motivo do reembolso para o
+usuário 1
+[1,2]
+1= Reembolso;
+2 = Transferência de
+crédito;
+tinyint Sim
+valorReembolso Valor reembolsado 10
+Min: 0.00;
+Max: 99999999.99;
+NumeroChar();
+decimal
+(10,2) Sim
+8. INFORMAÇÕES COMPLEMENTARES
+8.1. Tabelas de domínio:
+8.1.1. Tabela que define o domínio do campo CodigoTipoServico:
+Código do Tipo de Serviço
+Classe de Conforto Uso
+01 A (Cama)
+02 B (Leito)
+03 C (Semileito)
+04 D (Executiva)
+05 E (Básica)
+8.1.2. Tabela que define o domínio do campo CodigoTipoViagem:
+Código do Tipo de Viagem Uso
+00 Não Atende à Regularidade/Frequência Mínima
+01 Atende à Regularidade/Frequência Mínima
+Agência Nacional de Transportes Terrestres - ANTT
+Documento de Interface de Software - DIS
+MONITRIIP
+Página 40 de 42
+8.1.3. Tabela que define o domínio do campo CodigoMotivoDesconto:
+Código do Motivo do Desconto Uso
+00 Tarifa/Preço Normal (sem desconto)
+01 Tarifa/Preço Promocional
+02 Pessoa Idosa (gratuidade)
+03 Pessoa Idosa (desconto mínimo de 50%)
+04 Titular da Credencial de Passe Livre
+05 Acompanhante do Titular da Credencial de Passe Livre
+06 Jovem (gratuidade)
+07 Jovem (desconto mínimo de 50%)
+08 Criança de Colo (até 6 anos incompletos)
+09 Auditor ou Agente do Trabalho
+8.1.4. Tabela que define o domínio do campo CodigoTipoOcorrencia:
+Código do Tipo de Ocorrência Uso
+0 Reservado
+1 Sugestão
+2 Reclamação
+3 Elogio
+4 Solicitação
+5 Dano de Bagagem
+6 Extravio de Bagagem
+7 Violação de Bagagem
+8 Pesquisa de Opinião
+8.1.5. Tabela que define o domínio do campo CodigoTipoCartao:
+Código do Tipo de Cartão Uso
+00 Tarifa Normal
+01 Promocional
+02 Vale-transporte
+03 Gratuidade
+Agência Nacional de Transportes Terrestres - ANTT
+Documento de Interface de Software - DIS
+MONITRIIP
+Página 41 de 42
+8.1.6. Tabela que define o domínio do campo CodigoMotivoParada:
+Código do Motivo de Parada Uso
+Parada
+Programada
+01 Embarque e/ou Desembarque Intermediário de Passageiro(s)
+02 Ponto de Parada (descanso/alimentação)
+03 Ponto de Apoio
+04 Troca de Motorista
+05 Troca de Veículo
+06 Ponto de Fronteira
+Parada
+Não
+Programada
+11 Solicitação de Passageiro
+12 Solicitação de Motorista
+13 Solicitação de Agente Externo (Fiscalização)
+14 Defeito ou Falha no Veículo
+15 Congestionamento / Engarrafamento
+Incidente
+Acidente
+Assalto
+21 Incidente na Via
+22 Incidente com o Veículo
+23 Incidente com Passageiro
+24 Acidente na Via
+25 Acidente com o Veículo
+26 Acidente com Passageiro
+27 Assalto
+Outros 99 Outro
+8.1.7. Tabela que define o domínio do campo TipoRegistroViagem:
+Código do Tipo de Registro de Viagem Uso
+Início de
+Viagem
+1 Iniciar Viagem
+3 Iniciar viagem de transbordo
+Fim de
+Viagem
+0 Finalizar viagem
+2 Finalizar viagem com transbordo
+Agência Nacional de Transportes Terrestres - ANTT
+Documento de Interface de Software - DIS
+MONITRIIP
+Página 42 de 42
+8.2. Tabela que relaciona os logs exigidos para cada tipo de transporte:
+Log idLog Subsistema Prazo Limite
+Para Envio
+Rodoviário
+Regular
+Rodoviário
+Fretado
+Semiurbano
+Regular
+Log Venda de Passagem 00
+Não
+Embarcado
+24 horas
+X
+Log Cartão Emitido / Recarga
+Efetuada 01 X
+Log Registro de Ocorrência
+Rodoviário 02 X
+Log Registro de Ocorrência
+Semiurbano 03 X
+Log Cancelar Passagem 11 X
+Log Reembolso de Crédito do
+Cartão 12 Não há X
+Log Velocidade, Tempo e
+Localização 04
+Embarcado 10 horas
+X X X
+Log Jornada de Trabalho do
+Motorista 05 X X X
+Log Detector de Parada 06 X X X
+Log Início/Fim de Viagem
+Regular 07 X X
+Log Início/Fim de Viagem
+Fretado 08 X
+Log Bilhete de Embarque 09 X
+Log Leitor Cartão de Embarque
+RFID 10 X
