@@ -1,233 +1,260 @@
 "use client"
 
 import type React from "react"
-import { useState, useEffect } from "react"
-import { useAuth } from "../contexts/AuthContext"
-import { maquinaService } from "../services/maquinaService"
-import { clienteService } from "../services/clienteService"
-import { colaboradorService } from "../services/colaboradorService"
-import PageFeedback from "../components/PageFeedback"
-import { showError } from "../utils/toast"
-import "../styles/dashboard-pages.css"
+import {
+  ToggleLeft,
+  ToggleRight,
+  Wrench,
+  WifiOff,
+  Clock,
+  X,
+  Menu,
+} from "lucide-react"
+import MonitoringSemiDonut, {
+  type DonutSegment,
+} from "../components/MonitoringSemiDonut"
+import "../styles/monitoring-dashboard.css"
 
-interface DashboardStats {
-  totalMaquinas: number
-  maquinasAtivas: number
-  totalClientes: number
-  clientesAtivos: number
-  totalColaboradores: number
-  colaboradoresAtivos: number
-  eficienciaMedia: number
-  loading: boolean
-  error: string | null
+const MOCK_TOTAL_INSTALACOES = 377
+const MOCK_TOTAL_ATIVAS = 370
+
+const MOCK_STATUS = {
+  ligado: 62,
+  desligado: 166,
+  manutencao: 0,
+  downtime: 90,
+  atraso: 49,
+  semPosicao: 7,
+  ocultos: 0,
+} as const
+
+const STATUS_CARDS: {
+  key: keyof typeof MOCK_STATUS
+  label: string
+  className: string
+  icon: React.ReactNode
+}[] = [
+  {
+    key: "ligado",
+    label: "Ligado",
+    className: "monitoring-status-card--ligado",
+    icon: <ToggleRight size={22} strokeWidth={2} />,
+  },
+  {
+    key: "desligado",
+    label: "Desligado",
+    className: "monitoring-status-card--desligado",
+    icon: <ToggleLeft size={22} strokeWidth={2} />,
+  },
+  {
+    key: "manutencao",
+    label: "Manutenção",
+    className: "monitoring-status-card--manutencao",
+    icon: <Wrench size={22} strokeWidth={2} />,
+  },
+  {
+    key: "downtime",
+    label: "Downtime",
+    className: "monitoring-status-card--downtime",
+    icon: <WifiOff size={22} strokeWidth={2} />,
+  },
+  {
+    key: "atraso",
+    label: "Atraso",
+    className: "monitoring-status-card--atraso",
+    icon: <Clock size={22} strokeWidth={2} />,
+  },
+  {
+    key: "semPosicao",
+    label: "Sem Posição",
+    className: "monitoring-status-card--sem-posicao",
+    icon: <X size={24} strokeWidth={2.5} />,
+  },
+  {
+    key: "ocultos",
+    label: "Ocultos",
+    className: "monitoring-status-card--ocultos",
+    icon: <X size={24} strokeWidth={2.5} />,
+  },
+]
+
+interface InstalacaoRow {
+  cliente: string
+  instalacao: string
+  dataHora: string
+  ultTrans: string
+  status: string
 }
 
+const MOCK_TABLE: InstalacaoRow[] = [
+  {
+    cliente: "ARITUR TRANSPORTE E TURISMO LTDA",
+    instalacao: "ESTOQUE 1",
+    dataHora: "---",
+    ultTrans: "---",
+    status: "---",
+  },
+  {
+    cliente: "rastrevix",
+    instalacao: "teste motorista",
+    dataHora: "---",
+    ultTrans: "---",
+    status: "---",
+  },
+  {
+    cliente: "rastrevix",
+    instalacao: "3333",
+    dataHora: "---",
+    ultTrans: "---",
+    status: "---",
+  },
+  {
+    cliente: "PM-MUCURICI/ES",
+    instalacao: "ESTOQUE 139",
+    dataHora: "---",
+    ultTrans: "---",
+    status: "---",
+  },
+  {
+    cliente: "PM-MUCURICI/ES",
+    instalacao: "ESTOQUE 140",
+    dataHora: "---",
+    ultTrans: "---",
+    status: "---",
+  },
+  {
+    cliente: "TRANSPORTADORA NORDESTE S.A.",
+    instalacao: "CAMINHÃO 204",
+    dataHora: "01/06/2026 08:42",
+    ultTrans: "há 12 min",
+    status: "Ligado",
+  },
+  {
+    cliente: "LOGÍSTICA CENTRO OESTE",
+    instalacao: "VAN 18",
+    dataHora: "01/06/2026 07:15",
+    ultTrans: "há 1 h 38 min",
+    status: "Downtime",
+  },
+  {
+    cliente: "FROTA RÁPIDA LTDA",
+    instalacao: "PICKUP 09",
+    dataHora: "31/05/2026 22:03",
+    ultTrans: "há 10 h 51 min",
+    status: "Atraso",
+  },
+]
+
+const CHART_SEGMENTS: DonutSegment[] = [
+  { label: "Ligado", value: MOCK_STATUS.ligado, color: "#2ecc71" },
+  { label: "Desligado", value: MOCK_STATUS.desligado, color: "#3498db" },
+  { label: "Downtime", value: MOCK_STATUS.downtime, color: "#e67e22" },
+  { label: "Atraso", value: MOCK_STATUS.atraso, color: "#e74c3c" },
+  { label: "Sem Posição", value: MOCK_STATUS.semPosicao, color: "#34495e" },
+]
+
 const Dashboard: React.FC = () => {
-  const { user } = useAuth()
-  const userName = user?.name || "Usuário"
-
-  const [stats, setStats] = useState<DashboardStats>({
-    totalMaquinas: 0,
-    maquinasAtivas: 0,
-    totalClientes: 0,
-    clientesAtivos: 0,
-    totalColaboradores: 0,
-    colaboradoresAtivos: 0,
-    eficienciaMedia: 0,
-    loading: true,
-    error: null
-  })
-
-  useEffect(() => {
-    carregarEstatisticas()
-  }, [])
-
-  const carregarEstatisticas = async () => {
-    try {
-      setStats(prev => ({ ...prev, loading: true, error: null }))
-
-      // Carregar estatísticas de máquinas
-      const maquinasStats = await maquinaService.obterEstatisticas()
-
-      // Carregar estatísticas de clientes
-      const clientesStats = await clienteService.obterEstatisticas()
-
-      // Carregar estatísticas de colaboradores
-      const colaboradoresStats = await colaboradorService.obterEstatisticas()
-
-      setStats({
-        totalMaquinas: maquinasStats.data.total,
-        maquinasAtivas: maquinasStats.data.ativas,
-        totalClientes: clientesStats.data.total,
-        clientesAtivos: clientesStats.data.ativos,
-        totalColaboradores: colaboradoresStats.data.total,
-        colaboradoresAtivos: colaboradoresStats.data.ativos,
-        eficienciaMedia: maquinasStats.data.eficienciaMedia,
-        loading: false,
-        error: null
-      })
-    } catch (err) {
-      console.error('Erro ao carregar estatísticas:', err)
-      const msg = err instanceof Error ? err.message : 'Erro ao carregar o dashboard'
-      showError(msg)
-      setStats(prev => ({ ...prev, loading: false, error: msg }))
-    }
-  }
-
-  const getMensalData = () => {
-    // Calcular baseado nos dados reais
-    const totalItens = stats.totalMaquinas + stats.totalClientes + stats.totalColaboradores
-    const itensAtivos = stats.maquinasAtivas + stats.clientesAtivos + stats.colaboradoresAtivos
-
-    // Meta: manter 80% dos itens ativos
-    const meta = 80
-    const porcentagemAtual = totalItens > 0 ? (itensAtivos / totalItens) * 100 : 0
-
-    return {
-      porcentagem: Math.min(100, Math.round(porcentagemAtual)),
-      meta,
-      diffSemana: totalItens > 0 ? Math.round(porcentagemAtual - meta) : 0
-    }
-  }
-
-  const mensalData = getMensalData()
-
-  if (stats.loading) {
-    return (
-      <div className="dashboard-content">
-        <div className="dashboard-welcome">
-          <h2>Bem-vindo de volta, {userName}!</h2>
-        </div>
-        <PageFeedback loading loadingMessage="Carregando resumo da frota…" />
-      </div>
-    )
-  }
-
-  if (stats.error) {
-    return (
-      <div className="dashboard-content">
-        <div className="dashboard-welcome">
-          <h2>Bem-vindo de volta, {userName}!</h2>
-        </div>
-        <PageFeedback error={stats.error} onRetry={carregarEstatisticas} />
-      </div>
-    )
-  }
-
   return (
-    <div className="dashboard-content">
-      <div className="dashboard-welcome">
-        <h2>Bem-vindo de volta, {userName}!</h2>
-        <p>Aqui está um resumo das suas atividades</p>
-      </div>
+    <div className="monitoring-dashboard">
+      <h1 className="monitoring-dashboard__title">Dashboard</h1>
 
-      <div className="dashboard-grid">
-        <div className="card card-elevated">
-          <div className="stats-content">
-            <h3>TOTAL DE RECURSOS</h3>
-            <p className="stats-number">{stats.totalMaquinas + stats.totalClientes + stats.totalColaboradores}</p>
-            <span className="stats-change positive">
-              {stats.totalMaquinas} máquinas, {stats.totalClientes} clientes, {stats.totalColaboradores} colaboradores
-            </span>
-          </div>
+      <div className="monitoring-dashboard__totals">
+        <div className="monitoring-dashboard__total-item">
+          <span className="monitoring-dashboard__total-value">
+            {MOCK_TOTAL_INSTALACOES}
+          </span>
+          <span className="monitoring-dashboard__total-label">
+            Total de Instalação
+          </span>
         </div>
-
-        <div className="card card-elevated">
-          <div className="stats-content">
-            <h3>ATIVOS NO SISTEMA</h3>
-            <p className="stats-number">
-              {stats.maquinasAtivas + stats.clientesAtivos + stats.colaboradoresAtivos}
-            </p>
-            <span className="stats-change positive">
-              {stats.maquinasAtivas} máq., {stats.clientesAtivos} client., {stats.colaboradoresAtivos} colabor.
-            </span>
-          </div>
-        </div>
-
-        <div className="card card-elevated">
-          <div className="stats-content">
-            <h3>EFICIÊNCIA MÉDIA</h3>
-            <p className="stats-number">
-              {stats.eficienciaMedia > 0 ? `${Math.round(stats.eficienciaMedia)}%` : 'N/A'}
-            </p>
-            <span className="stats-change positive">
-              Máquinas {stats.eficienciaMedia > 0 ? 'operacionais' : 'sem dados'}
-            </span>
-          </div>
-        </div>
-
-        <div className="card card-elevated">
-          <div className="stats-content">
-            <h3>PERFORMANCE</h3>
-            <p className="stats-number">{mensalData.porcentagem}%</p>
-            <span className="stats-change positive">
-              {mensalData.diffSemana >= 0 ? '+' : ''}{mensalData.diffSemana}% desta semana
-            </span>
-          </div>
+        <div className="monitoring-dashboard__total-item">
+          <span className="monitoring-dashboard__total-value">
+            {MOCK_TOTAL_ATIVAS}
+          </span>
+          <span className="monitoring-dashboard__total-label">
+            Total de Instalação (Ativo)
+          </span>
         </div>
       </div>
 
-      <div className="dashboard-bottom-sections">
-        <div className="card card-elevated">
-          <h2>Resumo Atual</h2>
-          <div className="activity-list">
-            <div className="activity-item">
-              <div className="activity-content">
-                <p><strong>Máquinas:</strong> {stats.totalMaquinas} total ({stats.maquinasAtivas} ativas)</p>
-                <span className="activity-time">Última atualização: hoje</span>
-              </div>
-            </div>
-            <div className="activity-item">
-              <div className="activity-content">
-                <p><strong>Clientes:</strong> {stats.totalClientes} total ({stats.clientesAtivos} ativos)</p>
-                <span className="activity-time">Última atualização: hoje</span>
-              </div>
-            </div>
-            <div className="activity-item">
-              <div className="activity-content">
-                <p><strong>Colaboradores:</strong> {stats.totalColaboradores} total ({stats.colaboradoresAtivos} ativos)</p>
-                <span className="activity-time">Última atualização: hoje</span>
-              </div>
-            </div>
-            {stats.eficienciaMedia > 0 && (
-              <div className="activity-item">
-                <div className="activity-content">
-                  <p><strong>Eficiência média das máquinas:</strong> {Math.round(stats.eficienciaMedia)}%</p>
-                  <span className="activity-time">Baseado em dados reais</span>
-                </div>
-              </div>
-            )}
+      <div className="monitoring-dashboard__status-row">
+        {STATUS_CARDS.map((card) => (
+          <div
+            key={card.key}
+            className={`monitoring-status-card ${card.className}`}
+          >
+            <span className="monitoring-status-card__value">
+              {MOCK_STATUS[card.key]}
+            </span>
+            <span className="monitoring-status-card__label">{card.label}</span>
+            <span className="monitoring-status-card__icon">{card.icon}</span>
+          </div>
+        ))}
+      </div>
+
+      <div className="monitoring-dashboard__bottom">
+        <div className="monitoring-dashboard__table-panel">
+          <div className="monitoring-dashboard__table-wrap">
+            <table className="monitoring-table">
+              <thead>
+                <tr>
+                  <th className="monitoring-table__num">#</th>
+                  <th>Cliente</th>
+                  <th>Instalação</th>
+                  <th>Data/Hora</th>
+                  <th>Últ. Trans.</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {MOCK_TABLE.map((row, index) => (
+                  <tr key={`${row.cliente}-${row.instalacao}-${index}`}>
+                    <td className="monitoring-table__num">{index + 1}</td>
+                    <td>{row.cliente}</td>
+                    <td>{row.instalacao}</td>
+                    <td
+                      className={
+                        row.dataHora === "---"
+                          ? "monitoring-table__empty"
+                          : undefined
+                      }
+                    >
+                      {row.dataHora}
+                    </td>
+                    <td
+                      className={
+                        row.ultTrans === "---"
+                          ? "monitoring-table__empty"
+                          : undefined
+                      }
+                    >
+                      {row.ultTrans}
+                    </td>
+                    <td
+                      className={
+                        row.status === "---"
+                          ? "monitoring-table__empty"
+                          : undefined
+                      }
+                    >
+                      {row.status}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
 
-        <div className="card card-elevated">
-          <h2>Status do Sistema</h2>
-          <div className="project-list">
-            <div className="project-item">
-              <div className="project-header">
-                <h3>Rastrevix - Rastreamento Industrial</h3>
-                <span className="project-status in-progress">OPERACIONAL</span>
-              </div>
-              <div className="project-progress">
-                <div className="progress-bar">
-                  <div
-                    className="progress-fill"
-                    style={{ width: `${stats.totalMaquinas > 0 ? Math.min(100, (stats.maquinasAtivas / stats.totalMaquinas) * 100) : 0}%` }}
-                  ></div>
-                </div>
-                <span className="progress-text">
-                  {stats.totalMaquinas > 0
-                    ? `${Math.round((stats.maquinasAtivas / stats.totalMaquinas) * 100)}% das máquinas ativas`
-                    : 'Sem máquinas cadastradas'
-                  }
-                </span>
-              </div>
-              <div className="project-meta">
-                <span>{stats.maquinasAtivas} máquinas em operação</span>
-                <span>{stats.clientesAtivos} clientes ativos</span>
-              </div>
-            </div>
-          </div>
+        <div className="monitoring-dashboard__chart-panel">
+          <button
+            type="button"
+            className="monitoring-dashboard__chart-menu"
+            aria-label="Opções do gráfico"
+          >
+            <Menu size={18} />
+          </button>
+          <MonitoringSemiDonut segments={CHART_SEGMENTS} />
         </div>
       </div>
     </div>
@@ -235,4 +262,3 @@ const Dashboard: React.FC = () => {
 }
 
 export default Dashboard
-

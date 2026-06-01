@@ -37,7 +37,10 @@ export const PRODUCT_MENU: ProductMenuItem[] = [
     name: 'Estoque',
     icon: 'shopping-cart',
     protected: true,
-    submenu: [{ name: 'Chip GSM', path: '/estoque/chip-gsm', icon: 'cpu' }]
+    submenu: [
+      { name: 'Chip GSM', path: '/estoque/chip-gsm', icon: 'cpu' },
+      { name: 'Equipamento', path: '/estoque/equipamento', icon: 'cog' }
+    ]
   },
   {
     name: 'Relatórios',

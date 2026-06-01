@@ -1,0 +1,286 @@
+/* Dashboard de monitoramento — layout inspirado no painel de instalações */
+
+.monitoring-dashboard {
+  --md-bg: #e8eaed;
+  --md-surface: #ffffff;
+  --md-text: #2c3e50;
+  --md-text-muted: #7f8c8d;
+  --md-border: #dfe4ea;
+
+  --md-ligado: #2ecc71;
+  --md-desligado: #3498db;
+  --md-manutencao: #f1c40f;
+  --md-downtime: #e67e22;
+  --md-atraso: #e74c3c;
+  --md-sem-posicao: #34495e;
+  --md-ocultos: #1a1a1a;
+
+  background: var(--md-bg);
+  border-radius: 12px;
+  padding: 1.25rem 1.5rem 1.5rem;
+  min-height: calc(100vh - 120px);
+}
+
+.monitoring-dashboard__title {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--md-text);
+  letter-spacing: 0.04em;
+  margin: 0 0 1.25rem;
+  text-transform: uppercase;
+}
+
+.monitoring-dashboard__totals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.monitoring-dashboard__total-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.monitoring-dashboard__total-value {
+  font-size: 2.75rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--md-text);
+}
+
+.monitoring-dashboard__total-label {
+  font-size: 0.8rem;
+  color: var(--md-text-muted);
+  font-weight: 500;
+}
+
+.monitoring-dashboard__status-row {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.65rem;
+  margin-bottom: 1.25rem;
+}
+
+.monitoring-status-card {
+  border-radius: 8px;
+  padding: 0.85rem 0.75rem;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  min-height: 88px;
+  text-align: center;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+}
+
+.monitoring-status-card__value {
+  font-size: 1.75rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.monitoring-status-card__label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  opacity: 0.95;
+}
+
+.monitoring-status-card__icon {
+  opacity: 0.9;
+  margin-top: 0.15rem;
+}
+
+.monitoring-status-card--ligado {
+  background: var(--md-ligado);
+}
+
+.monitoring-status-card--desligado {
+  background: var(--md-desligado);
+}
+
+.monitoring-status-card--manutencao {
+  background: var(--md-manutencao);
+  color: #2c3e50;
+}
+
+.monitoring-status-card--downtime {
+  background: var(--md-downtime);
+}
+
+.monitoring-status-card--atraso {
+  background: var(--md-atraso);
+}
+
+.monitoring-status-card--sem-posicao {
+  background: var(--md-sem-posicao);
+}
+
+.monitoring-status-card--ocultos {
+  background: var(--md-ocultos);
+}
+
+.monitoring-dashboard__bottom {
+  display: grid;
+  grid-template-columns: 1fr minmax(280px, 380px);
+  gap: 1rem;
+  align-items: stretch;
+}
+
+.monitoring-dashboard__table-panel,
+.monitoring-dashboard__chart-panel {
+  background: var(--md-surface);
+  border-radius: 10px;
+  border: 1px solid var(--md-border);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+}
+
+.monitoring-dashboard__table-wrap {
+  overflow-x: auto;
+}
+
+.monitoring-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+
+.monitoring-table thead {
+  background: #f4f6f8;
+}
+
+.monitoring-table th {
+  padding: 0.65rem 0.75rem;
+  text-align: left;
+  font-weight: 600;
+  color: var(--md-text);
+  border-bottom: 1px solid var(--md-border);
+  white-space: nowrap;
+}
+
+.monitoring-table td {
+  padding: 0.6rem 0.75rem;
+  color: var(--md-text);
+  border-bottom: 1px solid #eef1f4;
+  vertical-align: middle;
+}
+
+.monitoring-table tbody tr:hover {
+  background: #f8f9fb;
+}
+
+.monitoring-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.monitoring-table__empty {
+  color: var(--md-text-muted);
+  text-align: center;
+}
+
+.monitoring-table__num {
+  color: var(--md-text-muted);
+  width: 2rem;
+  text-align: center;
+}
+
+.monitoring-dashboard__chart-panel {
+  display: flex;
+  flex-direction: column;
+  padding: 0.75rem 0.5rem 0.5rem;
+  position: relative;
+}
+
+.monitoring-dashboard__chart-menu {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.65rem;
+  background: none;
+  border: none;
+  color: var(--md-text-muted);
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.monitoring-dashboard__chart-menu:hover {
+  background: #f0f2f5;
+  color: var(--md-text);
+}
+
+.monitoring-semidonut {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  min-height: 220px;
+}
+
+.monitoring-semidonut svg {
+  width: 100%;
+  max-width: 320px;
+  height: auto;
+}
+
+.monitoring-semidonut__legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem 1rem;
+  padding: 0.5rem 0.75rem 0.25rem;
+  font-size: 0.7rem;
+  color: var(--md-text-muted);
+}
+
+.monitoring-semidonut__legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.monitoring-semidonut__legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+@media (max-width: 1200px) {
+  .monitoring-dashboard__status-row {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+@media (max-width: 900px) {
+  .monitoring-dashboard__status-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .monitoring-dashboard__bottom {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .monitoring-dashboard {
+    padding: 1rem;
+  }
+
+  .monitoring-dashboard__totals {
+    gap: 1.5rem;
+  }
+
+  .monitoring-dashboard__total-value {
+    font-size: 2rem;
+  }
+}
