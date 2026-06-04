@@ -63,20 +63,21 @@ const ConnectionStatus: React.FC<ConnectionStatusProps> = ({ className = '' }) =
   };
 
   return (
-    <div className={`flex items-center gap-2 ${className}`}>
+    <div className={`connection-status flex items-center gap-2 ${className}`}>
       {getStatusIcon()}
-      <span className={`text-sm font-medium ${getStatusColor()}`}>
+      <span className={`connection-status__label text-sm font-medium ${getStatusColor()}`}>
         {getStatusText()}
       </span>
       {lastCheck && (
-        <span className="text-xs text-gray-400">
+        <span className="connection-status__time text-xs text-gray-400">
           ({lastCheck.toLocaleTimeString()})
         </span>
       )}
       <button
+        type="button"
         onClick={checkConnection}
         disabled={isChecking}
-        className="text-xs text-blue-500 hover:text-blue-700 disabled:opacity-50"
+        className="connection-status__refresh text-xs text-blue-500 hover:text-blue-700 disabled:opacity-50"
         title="Verificar conexão"
       >
         Atualizar

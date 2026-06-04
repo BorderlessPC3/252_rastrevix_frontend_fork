@@ -12,6 +12,9 @@ import {
   Cog,
   Users,
   ChevronDown,
+  ChevronLeft,
+  X,
+  LogOut,
   ShoppingCart,
   Cpu,
   Building,
@@ -33,6 +36,7 @@ interface SidebarProps {
   onClose: () => void;
   isCollapsed: boolean;
   onToggleCollapse: () => void;
+  isMobile?: boolean;
 }
 
 const SUBMENU_ROUTE_PREFIX: Record<string, string> = {
@@ -52,7 +56,14 @@ function buildSubmenuOpenState(pathname: string): Record<string, boolean> {
   return next;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed, onToggleCollapse }) => {
+const Sidebar: React.FC<SidebarProps> = ({
+  isOpen,
+  onClose,
+  isCollapsed,
+  onToggleCollapse,
+  isMobile = false,
+}) => {
+  const collapsed = isMobile ? false : isCollapsed;
   const location = useLocation();
   const { isAuthenticated, user, logout } = useAuth();
   const { branding } = useTheme();
@@ -144,30 +155,66 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed, onToggl
 
   const filteredMenuItems = filterByRole(menuItems);
 
+  const collapseButton = (
+    <button
+      type="button"
+      className="sidebar-collapse-btn"
+      onClick={onToggleCollapse}
+      aria-label={isCollapsed ? 'Expandir sidebar' : 'Colapsar sidebar'}
+      aria-expanded={!isCollapsed}
+    >
+      <ChevronLeft
+        size={18}
+        strokeWidth={2.25}
+        className={`collapse-icon ${isCollapsed ? 'collapsed' : ''}`}
+        aria-hidden="true"
+      />
+    </button>
+  );
+
   return (
     <>
-      {isOpen && <div className="sidebar-overlay" onClick={onClose} />}
+      {isOpen && (
+        <div
+          className="sidebar-overlay"
+          onClick={onClose}
+          aria-hidden={!isMobile}
+        />
+      )}
 
-      <div className={`sidebar ${isOpen ? 'sidebar-open' : ''} ${isCollapsed ? 'sidebar-collapsed' : ''}`}>
+      <div
+        className={`sidebar ${isOpen ? 'sidebar-open' : ''} ${collapsed ? 'sidebar-collapsed' : ''} ${isMobile ? 'sidebar--mobile' : ''}`}
+        aria-hidden={isMobile && !isOpen}
+      >
         <div className="sidebar-header">
-          <div className="sidebar-logo">
-            {branding?.logoUrl ? (
-              <img src={branding.logoUrl} alt="" className="logo-img" style={{ height: 28 }} />
-            ) : (
-              <span className="logo-icon" />
-            )}
-            {!isCollapsed && <span className="logo-text">{branding?.name || 'Rastrevix'}</span>}
+          <div className="sidebar-brand">
+            <div className="sidebar-logo">
+              {branding?.logoUrl ? (
+                <img src={branding.logoUrl} alt="" className="logo-img" style={{ height: 28 }} />
+              ) : (
+                <span className="logo-icon" />
+              )}
+              {!collapsed && <span className="logo-text">{branding?.name || 'Rastrevix'}</span>}
+            </div>
           </div>
-          <button
-            className="sidebar-collapse-btn"
-            onClick={onToggleCollapse}
-            aria-label={isCollapsed ? 'Expandir sidebar' : 'Colapsar sidebar'}
-          >
-            <span className={`collapse-icon ${isCollapsed ? 'collapsed' : ''}`}>‹</span>
-          </button>
+          {isMobile ? (
+            <button
+              type="button"
+              className="sidebar-close-btn"
+              onClick={onClose}
+              aria-label="Fechar menu"
+            >
+              <X size={22} strokeWidth={2} aria-hidden="true" />
+            </button>
+          ) : (
+            !collapsed && collapseButton
+          )}
         </div>
 
         <nav className="sidebar-nav">
+          {collapsed && (
+            <div className="sidebar-collapse-anchor">{collapseButton}</div>
+          )}
           <ul className="sidebar-menu">
             {filteredMenuItems.map((item) => (
               <li key={item.path || item.name} className="sidebar-item">
@@ -177,11 +224,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed, onToggl
                       className="sidebar-link sidebar-submenu-header"
                       onClick={() => toggleSubmenu(item.name)}
                       style={{ cursor: 'pointer' }}
-                      title={isCollapsed ? item.name : undefined}
+                      title={collapsed ? item.name : undefined}
                     >
                       {getIcon(item.icon)}
-                      {!isCollapsed && <span className="sidebar-text">{item.name}</span>}
-                      {!isCollapsed && (
+                      {!collapsed && <span className="sidebar-text">{item.name}</span>}
+                      {!collapsed && (
                         <ChevronDown
                           size={16}
                           className={`sidebar-arrow ${openSubmenus[item.name] ? 'open' : ''}`}
@@ -198,7 +245,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed, onToggl
                               onClick={onClose}
                             >
                               {getIcon(subItem.icon, 16)}
-                              {!isCollapsed && <span className="sidebar-text">{subItem.name}</span>}
+                              {!collapsed && <span className="sidebar-text">{subItem.name}</span>}
                             </Link>
                           </li>
                         ))}
@@ -210,10 +257,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed, onToggl
                     to={item.path!}
                     className={`sidebar-link ${location.pathname === item.path ? 'active' : ''}`}
                     onClick={onClose}
-                    title={isCollapsed ? item.name : undefined}
+                    title={collapsed ? item.name : undefined}
                   >
                     {getIcon(item.icon)}
-                    {!isCollapsed && <span className="sidebar-text">{item.name}</span>}
+                    {!collapsed && <span className="sidebar-text">{item.name}</span>}
                   </Link>
                 )}
               </li>
@@ -223,30 +270,33 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed, onToggl
 
         <div className="sidebar-footer">
           {isAuthenticated ? (
-            <div className="user-info">
-              <div className="user-avatar">{user?.name?.charAt(0).toUpperCase() || 'U'}</div>
-              {!isCollapsed && (
-                <div className="user-details">
-                  <div className="user-name">{user?.name || 'Usuário'}</div>
-                  <div className="user-email">{user?.email || ''}</div>
-                </div>
-              )}
+            <>
+              <div className="user-info">
+                <div className="user-avatar">{user?.name?.charAt(0).toUpperCase() || 'U'}</div>
+                {!collapsed && (
+                  <div className="user-details">
+                    <div className="user-name">{user?.name || 'Usuário'}</div>
+                    <div className="user-email">{user?.email || ''}</div>
+                  </div>
+                )}
+              </div>
               <button
+                type="button"
                 className="logout-btn"
                 onClick={handleLogout}
-                aria-label="Sair"
-                title={isCollapsed ? 'Sair' : undefined}
+                aria-label="Sair da conta"
               >
-                {!isCollapsed ? 'Sair' : '↗'}
+                <LogOut size={18} strokeWidth={2.25} className="logout-btn-icon" aria-hidden="true" />
+                {!collapsed && <span className="logout-btn-label">Sair</span>}
               </button>
-            </div>
+            </>
           ) : (
             <div className="auth-buttons">
               <Link to="/login" className="auth-link login-link" onClick={onClose}>
-                {!isCollapsed ? 'Entrar' : '→'}
+                {!collapsed ? 'Entrar' : '→'}
               </Link>
               <Link to="/register" className="auth-link register-link" onClick={onClose}>
-                {!isCollapsed ? 'Cadastrar' : '+'}
+                {!collapsed ? 'Cadastrar' : '+'}
               </Link>
             </div>
           )}

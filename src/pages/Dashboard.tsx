@@ -1,5 +1,3 @@
-"use client"
-
 import type React from "react"
 import {
   ToggleLeft,
@@ -8,7 +6,9 @@ import {
   WifiOff,
   Clock,
   X,
-  Menu,
+  MoreHorizontal,
+  Activity,
+  Truck,
 } from "lucide-react"
 import MonitoringSemiDonut, {
   type DonutSegment,
@@ -38,43 +38,43 @@ const STATUS_CARDS: {
     key: "ligado",
     label: "Ligado",
     className: "monitoring-status-card--ligado",
-    icon: <ToggleRight size={22} strokeWidth={2} />,
+    icon: <ToggleRight size={20} strokeWidth={2} />,
   },
   {
     key: "desligado",
     label: "Desligado",
     className: "monitoring-status-card--desligado",
-    icon: <ToggleLeft size={22} strokeWidth={2} />,
+    icon: <ToggleLeft size={20} strokeWidth={2} />,
   },
   {
     key: "manutencao",
     label: "Manutenção",
     className: "monitoring-status-card--manutencao",
-    icon: <Wrench size={22} strokeWidth={2} />,
+    icon: <Wrench size={20} strokeWidth={2} />,
   },
   {
     key: "downtime",
     label: "Downtime",
     className: "monitoring-status-card--downtime",
-    icon: <WifiOff size={22} strokeWidth={2} />,
+    icon: <WifiOff size={20} strokeWidth={2} />,
   },
   {
     key: "atraso",
     label: "Atraso",
     className: "monitoring-status-card--atraso",
-    icon: <Clock size={22} strokeWidth={2} />,
+    icon: <Clock size={20} strokeWidth={2} />,
   },
   {
     key: "semPosicao",
     label: "Sem Posição",
     className: "monitoring-status-card--sem-posicao",
-    icon: <X size={24} strokeWidth={2.5} />,
+    icon: <X size={20} strokeWidth={2.5} />,
   },
   {
     key: "ocultos",
     label: "Ocultos",
     className: "monitoring-status-card--ocultos",
-    icon: <X size={24} strokeWidth={2.5} />,
+    icon: <X size={20} strokeWidth={2.5} />,
   },
 ]
 
@@ -146,54 +146,104 @@ const MOCK_TABLE: InstalacaoRow[] = [
 ]
 
 const CHART_SEGMENTS: DonutSegment[] = [
-  { label: "Ligado", value: MOCK_STATUS.ligado, color: "#2ecc71" },
-  { label: "Desligado", value: MOCK_STATUS.desligado, color: "#3498db" },
-  { label: "Downtime", value: MOCK_STATUS.downtime, color: "#e67e22" },
-  { label: "Atraso", value: MOCK_STATUS.atraso, color: "#e74c3c" },
-  { label: "Sem Posição", value: MOCK_STATUS.semPosicao, color: "#34495e" },
+  { label: "Ligado", value: MOCK_STATUS.ligado, color: "#22c55e" },
+  { label: "Desligado", value: MOCK_STATUS.desligado, color: "#3b82f6" },
+  { label: "Downtime", value: MOCK_STATUS.downtime, color: "#f97316" },
+  { label: "Atraso", value: MOCK_STATUS.atraso, color: "#ef4444" },
+  { label: "Sem Posição", value: MOCK_STATUS.semPosicao, color: "#475569" },
 ]
 
+const STATUS_BADGE_CLASS: Record<string, string> = {
+  Ligado: "ligado",
+  Desligado: "desligado",
+  Downtime: "downtime",
+  Atraso: "atraso",
+  "Sem Posição": "sem-posicao",
+  Manutenção: "manutencao",
+}
+
+function TableStatusCell({ status }: { status: string }) {
+  if (status === "---") {
+    return <span className="monitoring-table__empty">—</span>
+  }
+  const variant = STATUS_BADGE_CLASS[status] ?? "neutral"
+  return (
+    <span className={`monitoring-table__badge monitoring-table__badge--${variant}`}>
+      {status}
+    </span>
+  )
+}
+
 const Dashboard: React.FC = () => {
+  const ativasPercent = Math.round((MOCK_TOTAL_ATIVAS / MOCK_TOTAL_INSTALACOES) * 100)
+
   return (
     <div className="monitoring-dashboard">
-      <h1 className="monitoring-dashboard__title">Dashboard</h1>
-
-      <div className="monitoring-dashboard__totals">
-        <div className="monitoring-dashboard__total-item">
-          <span className="monitoring-dashboard__total-value">
-            {MOCK_TOTAL_INSTALACOES}
-          </span>
-          <span className="monitoring-dashboard__total-label">
-            Total de Instalação
+      <header className="monitoring-dashboard__header">
+        <div className="monitoring-dashboard__header-text">
+          <span className="monitoring-dashboard__eyebrow">Monitoramento em tempo real</span>
+          <h1 className="monitoring-dashboard__title">Dashboard</h1>
+        </div>
+        <div className="monitoring-dashboard__header-meta">
+          <span className="monitoring-dashboard__live">
+            <span className="monitoring-dashboard__live-dot" aria-hidden />
+            Frota ativa
           </span>
         </div>
-        <div className="monitoring-dashboard__total-item">
-          <span className="monitoring-dashboard__total-value">
-            {MOCK_TOTAL_ATIVAS}
-          </span>
-          <span className="monitoring-dashboard__total-label">
-            Total de Instalação (Ativo)
-          </span>
-        </div>
-      </div>
+      </header>
 
-      <div className="monitoring-dashboard__status-row">
-        {STATUS_CARDS.map((card) => (
+      <section className="monitoring-dashboard__kpis" aria-label="Totais">
+        <article className="monitoring-kpi">
+          <div className="monitoring-kpi__icon" aria-hidden>
+            <Truck size={22} strokeWidth={1.75} />
+          </div>
+          <div className="monitoring-kpi__body">
+            <span className="monitoring-kpi__value">{MOCK_TOTAL_INSTALACOES}</span>
+            <span className="monitoring-kpi__label">Total de instalações</span>
+          </div>
+        </article>
+        <article className="monitoring-kpi monitoring-kpi--accent">
+          <div className="monitoring-kpi__icon" aria-hidden>
+            <Activity size={22} strokeWidth={1.75} />
+          </div>
+          <div className="monitoring-kpi__body">
+            <span className="monitoring-kpi__value">{MOCK_TOTAL_ATIVAS}</span>
+            <span className="monitoring-kpi__label">
+              Instalações ativas
+              <span className="monitoring-kpi__chip">{ativasPercent}%</span>
+            </span>
+          </div>
+        </article>
+      </section>
+
+      <section className="monitoring-dashboard__status-row" aria-label="Status da frota">
+        {STATUS_CARDS.map((card, index) => (
           <div
             key={card.key}
             className={`monitoring-status-card ${card.className}`}
+            style={{ animationDelay: `${index * 40}ms` }}
           >
+            <span className="monitoring-status-card__icon" aria-hidden>
+              {card.icon}
+            </span>
             <span className="monitoring-status-card__value">
               {MOCK_STATUS[card.key]}
             </span>
             <span className="monitoring-status-card__label">{card.label}</span>
-            <span className="monitoring-status-card__icon">{card.icon}</span>
           </div>
         ))}
-      </div>
+      </section>
 
       <div className="monitoring-dashboard__bottom">
-        <div className="monitoring-dashboard__table-panel">
+        <section className="monitoring-dashboard__table-panel">
+          <div className="monitoring-panel__head">
+            <div>
+              <h2 className="monitoring-panel__title">Instalações</h2>
+              <p className="monitoring-panel__subtitle">
+                {MOCK_TABLE.length} registros na visualização
+              </p>
+            </div>
+          </div>
           <div className="monitoring-dashboard__table-wrap">
             <table className="monitoring-table">
               <thead>
@@ -202,7 +252,7 @@ const Dashboard: React.FC = () => {
                   <th>Cliente</th>
                   <th>Instalação</th>
                   <th>Data/Hora</th>
-                  <th>Últ. Trans.</th>
+                  <th>Últ. trans.</th>
                   <th>Status</th>
                 </tr>
               </thead>
@@ -210,52 +260,54 @@ const Dashboard: React.FC = () => {
                 {MOCK_TABLE.map((row, index) => (
                   <tr key={`${row.cliente}-${row.instalacao}-${index}`}>
                     <td className="monitoring-table__num">{index + 1}</td>
-                    <td>{row.cliente}</td>
-                    <td>{row.instalacao}</td>
+                    <td className="monitoring-table__cliente">{row.cliente}</td>
+                    <td>
+                      <span className="monitoring-table__instalacao">{row.instalacao}</span>
+                    </td>
                     <td
                       className={
                         row.dataHora === "---"
                           ? "monitoring-table__empty"
-                          : undefined
+                          : "monitoring-table__datetime"
                       }
                     >
-                      {row.dataHora}
+                      {row.dataHora === "---" ? "—" : row.dataHora}
                     </td>
                     <td
                       className={
                         row.ultTrans === "---"
                           ? "monitoring-table__empty"
-                          : undefined
+                          : "monitoring-table__trans"
                       }
                     >
-                      {row.ultTrans}
+                      {row.ultTrans === "---" ? "—" : row.ultTrans}
                     </td>
-                    <td
-                      className={
-                        row.status === "---"
-                          ? "monitoring-table__empty"
-                          : undefined
-                      }
-                    >
-                      {row.status}
+                    <td>
+                      <TableStatusCell status={row.status} />
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-        </div>
+        </section>
 
-        <div className="monitoring-dashboard__chart-panel">
-          <button
-            type="button"
-            className="monitoring-dashboard__chart-menu"
-            aria-label="Opções do gráfico"
-          >
-            <Menu size={18} />
-          </button>
+        <section className="monitoring-dashboard__chart-panel">
+          <div className="monitoring-panel__head">
+            <div>
+              <h2 className="monitoring-panel__title">Distribuição</h2>
+              <p className="monitoring-panel__subtitle">Por status operacional</p>
+            </div>
+            <button
+              type="button"
+              className="monitoring-dashboard__chart-menu"
+              aria-label="Opções do gráfico"
+            >
+              <MoreHorizontal size={18} />
+            </button>
+          </div>
           <MonitoringSemiDonut segments={CHART_SEGMENTS} />
-        </div>
+        </section>
       </div>
     </div>
   )

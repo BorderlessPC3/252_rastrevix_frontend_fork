@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, useLocation, Navigate } from 'react-router-dom';
+import { Menu } from 'lucide-react';
 import Sidebar from './Sidebar';
 import ConnectionStatus from './ConnectionStatus';
 import { useAuth } from '../contexts/AuthContext';
+import { useIsMobile } from '../hooks/useIsMobile';
 
 const Layout: React.FC = () => {
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const isMobile = useIsMobile();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     const saved = localStorage.getItem('sidebarCollapsed');
     return saved ? JSON.parse(saved) : true;
@@ -13,26 +16,26 @@ const Layout: React.FC = () => {
   const location = useLocation();
   const { isAuthenticated, loading } = useAuth();
 
-  // Salvar estado da sidebar no localStorage
   useEffect(() => {
     localStorage.setItem('sidebarCollapsed', JSON.stringify(sidebarCollapsed));
   }, [sidebarCollapsed]);
 
-  // Forçar atualização do layout quando a rota mudar
   useEffect(() => {
-    // Pequeno delay para garantir que o DOM seja atualizado
-    const timer = setTimeout(() => {
-      // Força reflow do layout
-      const mainContainer = document.querySelector('.main-container') as HTMLElement;
-      if (mainContainer) {
-        mainContainer.style.marginLeft = sidebarCollapsed ? '80px' : '280px';
-      }
-    }, 10);
+    if (isMobile) {
+      setSidebarOpen(false);
+    }
+  }, [location.pathname, isMobile]);
 
-    return () => clearTimeout(timer);
-  }, [location.pathname, sidebarCollapsed]);
+  useEffect(() => {
+    if (isMobile && sidebarOpen) {
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = '';
+      };
+    }
+    document.body.style.overflow = '';
+  }, [isMobile, sidebarOpen]);
 
-  // Show loading state while checking authentication
   if (loading) {
     return (
       <div className="loading-container">
@@ -42,32 +45,45 @@ const Layout: React.FC = () => {
     );
   }
 
-  // Redirect to login if not authenticated
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
 
   const toggleSidebarCollapse = () => {
-    setSidebarCollapsed(!sidebarCollapsed);
+    if (!isMobile) {
+      setSidebarCollapsed(!sidebarCollapsed);
+    }
   };
 
-  const closeSidebar = () => {
-    setSidebarOpen(false);
-  };
-
+  const openSidebar = () => setSidebarOpen(true);
+  const closeSidebar = () => setSidebarOpen(false);
 
   return (
-    <div className="app-layout">
-      <Sidebar 
-        isOpen={sidebarOpen} 
+    <div className={`app-layout ${isMobile ? 'app-layout--mobile' : ''}`}>
+      <Sidebar
+        isOpen={isMobile ? sidebarOpen : true}
         onClose={closeSidebar}
         isCollapsed={sidebarCollapsed}
         onToggleCollapse={toggleSidebarCollapse}
+        isMobile={isMobile}
       />
 
-      <div className={`main-container ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
+      <div
+        className={`main-container ${!isMobile && sidebarCollapsed ? 'sidebar-collapsed' : ''}`}
+      >
         <div className="main-header">
           <div className="page-title">
+            {isMobile && (
+              <button
+                type="button"
+                className="sidebar-toggle-btn"
+                onClick={openSidebar}
+                aria-label="Abrir menu de navegação"
+                aria-expanded={sidebarOpen}
+              >
+                <Menu size={22} strokeWidth={2} aria-hidden="true" />
+              </button>
+            )}
             <h1>Rastrevix</h1>
           </div>
           <div className="header-actions">
