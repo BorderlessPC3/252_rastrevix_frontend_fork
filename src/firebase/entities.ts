@@ -1,5 +1,5 @@
 import { COLLECTIONS } from './collections';
-import { matchesSearch, paginate, toDate, toIso } from './helpers';
+import { matchesSearch, paginate, toDate, toIso, toNumber } from './helpers';
 import { FirestoreRepo } from './repository';
 import { calcularDistanciaPercorrida, calcularDuracaoMinutos } from '../utils/geo';
 import type { Cliente, ClienteCreateData, ClienteListResponse, ClienteResponse, ClienteStatsResponse, ClienteUpdateData } from '../services/clienteService';
@@ -75,11 +75,72 @@ function asMaquina(row: Record<string, unknown>): Maquina {
 }
 
 function asRastreador(row: Record<string, unknown>): Rastreador {
-  return row as unknown as Rastreador;
+  const base = row as unknown as Rastreador;
+  return {
+    ...base,
+    id: String(row.id),
+    ultimaLatitude: toNumber(row.ultimaLatitude),
+    ultimaLongitude: toNumber(row.ultimaLongitude),
+    ultimaVelocidade: toNumber(row.ultimaVelocidade),
+    ultimaDirecao: toNumber(row.ultimaDirecao),
+    ultimaIgnicao: row.ultimaIgnicao as boolean | undefined,
+    ultimaPosicaoGps: row.ultimaPosicaoGps ? toIso(row.ultimaPosicaoGps) : undefined,
+    ultimaComunicacao: row.ultimaComunicacao ? toIso(row.ultimaComunicacao) : undefined
+  };
 }
 
 function asDados(row: Record<string, unknown>): DadosRastreador {
-  return row as unknown as DadosRastreador;
+  return {
+    id: String(row.id),
+    rastreadorId: String(row.rastreadorId ?? ''),
+    timestamp: toIso(row.timestamp),
+    latitude: toNumber(row.latitude),
+    longitude: toNumber(row.longitude),
+    altitude: toNumber(row.altitude),
+    velocidade: toNumber(row.velocidade),
+    direcao: toNumber(row.direcao),
+    satelites: toNumber(row.satelites),
+    ignicao: row.ignicao as boolean | undefined,
+    odometro: toNumber(row.odometro),
+    horimetro: toNumber(row.horimetro),
+    tensaoEntrada: toNumber(row.tensaoEntrada),
+    tensaoBateria: toNumber(row.tensaoBateria),
+    velocidadeCAN: toNumber(row.velocidadeCAN),
+    rpm: toNumber(row.rpm),
+    combustivel: toNumber(row.combustivel),
+    temperatura: toNumber(row.temperatura),
+    canAtivo: row.canAtivo as boolean | undefined,
+    eventoId: toNumber(row.eventoId),
+    eventoStatus: row.eventoStatus as string | undefined,
+    eventoNome: row.eventoNome as string | undefined
+  };
+}
+
+function posicaoFromRastreadorCache(r: Rastreador): DadosRastreador | undefined {
+  const lat = toNumber(r.ultimaLatitude);
+  const lng = toNumber(r.ultimaLongitude);
+  if (lat == null || lng == null) return undefined;
+  return {
+    id: `cache-${r.id}`,
+    rastreadorId: r.id,
+    timestamp: toIso(r.ultimaPosicaoGps ?? r.ultimaComunicacao),
+    latitude: lat,
+    longitude: lng,
+    velocidade: toNumber(r.ultimaVelocidade),
+    direcao: toNumber(r.ultimaDirecao),
+    ignicao: r.ultimaIgnicao
+  };
+}
+
+async function resolvePosicaoAtual(
+  rastreadorId: string,
+  rastreador?: Rastreador
+): Promise<DadosRastreador | undefined> {
+  const fromHistorico = await latestPosicao(rastreadorId);
+  if (fromHistorico?.latitude != null && fromHistorico?.longitude != null) {
+    return fromHistorico;
+  }
+  return rastreador ? posicaoFromRastreadorCache(rastreador) : undefined;
 }
 
 function asEvento(row: Record<string, unknown>): EventoRastreador {
@@ -584,7 +645,47 @@ async function latestPosicao(rastreadorId: string): Promise<DadosRastreador | un
   const rows = (await dadosRepo.getAll())
     .filter((d) => d.rastreadorId === rastreadorId && d.latitude != null && d.longitude != null)
     .sort((a, b) => (toDate(b.timestamp)?.getTime() || 0) - (toDate(a.timestamp)?.getTime() || 0));
-  return rows[0] ? asDados(rows[0]) : undefined;
+  const latest = rows[0] ? asDados(rows[0]) : undefined;
+  if (latest?.latitude != null && latest?.longitude != null) return latest;
+  return undefined;
+}
+
+/** Veículos com posição GPS para o mapa — lê rastreadores + dados_rastreador no Firestore. */
+export async function listarVeiculosMapa(clienteId?: string): Promise<VeiculoFrota[]> {
+  const rastreadores = (await rastreadoresRepo.getAll()).map(asRastreador);
+  const maquinas = (await maquinasRepo.getAll()).map(asMaquina);
+  const maquinaByRastreador = new Map(
+    maquinas.filter((m) => m.rastreadorId).map((m) => [String(m.rastreadorId), m])
+  );
+
+  const veiculos: VeiculoFrota[] = [];
+
+  for (const r of rastreadores.filter((item) => item.status === 'ativo')) {
+    const posicaoAtual = await resolvePosicaoAtual(r.id, r);
+    if (posicaoAtual?.latitude == null || posicaoAtual?.longitude == null) continue;
+
+    const maquina = maquinaByRastreador.get(r.id);
+    if (clienteId && maquina && maquina.clienteId !== clienteId) continue;
+    if (clienteId && !maquina) continue;
+
+    veiculos.push({
+      id: maquina?.id ?? r.id,
+      maquinaId: maquina?.id ?? r.id,
+      rastreadorId: r.id,
+      codigo: maquina?.codigo ?? r.numeroSerial,
+      nome: maquina?.nome || r.nome || r.numeroSerial,
+      placa: maquina?.placa || r.placa,
+      status: maquina?.status ?? r.status,
+      clienteId: maquina?.clienteId,
+      tipo: maquina?.tipo,
+      tipoVeiculo: r.tipoVeiculo || 'carro',
+      condutor: r.condutor,
+      rastreador: r,
+      posicaoAtual
+    });
+  }
+
+  return veiculos;
 }
 
 export async function listarVeiculosFrota(params?: {
@@ -607,7 +708,7 @@ export async function listarVeiculosFrota(params?: {
 
   for (const maquina of maquinas) {
     const rastreador = maquina.rastreadorId ? rastMap.get(maquina.rastreadorId) : undefined;
-    const posicaoAtual = maquina.rastreadorId ? await latestPosicao(maquina.rastreadorId) : undefined;
+    const posicaoAtual = maquina.rastreadorId ? await resolvePosicaoAtual(maquina.rastreadorId, rastreador) : undefined;
     veiculos.push({
       id: maquina.id,
       maquinaId: maquina.id,
@@ -639,7 +740,7 @@ export async function listarVeiculosFrota(params?: {
       tipoVeiculo: r.tipoVeiculo,
       condutor: r.condutor,
       rastreador: r,
-      posicaoAtual: await latestPosicao(r.id)
+      posicaoAtual: await resolvePosicaoAtual(r.id, r)
     });
   }
 

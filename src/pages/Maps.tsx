@@ -12,6 +12,10 @@ import PageFeedback from "../components/PageFeedback"
 import GoogleMapContainer from "../components/GoogleMapContainer"
 import { useGoogleMap, type GoogleMapType } from "../hooks/useGoogleMap"
 import { createVehicleMarkerIcon } from "../lib/googleMapsMarkers"
+import { loadGoogleMaps } from "../lib/googleMapsLoader"
+
+const hasCoords = (pos?: VeiculoFrota["posicaoAtual"]) =>
+  pos?.latitude != null && pos?.longitude != null
 
 const Maps: React.FC = () => {
   const mapContainerRef = useRef<HTMLDivElement>(null)
@@ -43,9 +47,9 @@ const Maps: React.FC = () => {
   const updateMarker = useCallback((v: VeiculoFrota) => {
     const map = mapRef.current
     const pos = v.posicaoAtual
-    if (!map || !pos?.latitude || !pos?.longitude) return
+    if (!map || !hasCoords(pos)) return
 
-    const position = { lat: pos.latitude, lng: pos.longitude }
+    const position = { lat: pos!.latitude!, lng: pos!.longitude! }
     const placa = v.placa || v.codigo
     const vel = Math.round(pos.velocidade || 0)
     const isSelected = selectedId === v.id
@@ -89,13 +93,45 @@ const Maps: React.FC = () => {
     })
   }, [updateMarker])
 
+  const fitMapToVeiculos = useCallback(async (lista: VeiculoFrota[]) => {
+    const map = mapRef.current
+    if (!map || lista.length === 0) return
+    await loadGoogleMaps()
+    const bounds = new google.maps.LatLngBounds()
+    lista.forEach((v) => {
+      const pos = v.posicaoAtual
+      if (hasCoords(pos)) bounds.extend({ lat: pos!.latitude!, lng: pos!.longitude! })
+    })
+    if (!bounds.isEmpty()) {
+      map.fitBounds(bounds, { top: 80, right: 40, bottom: 40, left: 40 })
+    }
+  }, [mapRef])
+
   const applyPosicaoUpdate = useCallback((rastreadorId: string, posicao: VeiculoFrota["posicaoAtual"]) => {
+    if (!hasCoords(posicao)) return
+
     setVeiculos((prev) => {
-      const next = prev.map((v) => {
-        const rid = v.rastreadorId || v.id
-        if (rid !== rastreadorId) return v
-        return { ...v, posicaoAtual: posicao }
-      })
+      const idx = prev.findIndex((v) => (v.rastreadorId || v.id) === rastreadorId)
+      let next: VeiculoFrota[]
+
+      if (idx >= 0) {
+        next = prev.map((v, i) => (i === idx ? { ...v, posicaoAtual: posicao } : v))
+      } else {
+        next = [
+          ...prev,
+          {
+            id: rastreadorId,
+            maquinaId: rastreadorId,
+            rastreadorId,
+            codigo: rastreadorId.slice(0, 8),
+            nome: `Rastreador ${rastreadorId.slice(0, 8)}`,
+            status: "ativo",
+            tipoVeiculo: "carro",
+            posicaoAtual: posicao
+          }
+        ]
+      }
+
       veiculosRef.current = next
       const updated = next.find((v) => (v.rastreadorId || v.id) === rastreadorId)
       if (updated) updateMarker(updated)
@@ -110,7 +146,10 @@ const Maps: React.FC = () => {
       const lista = await frotaService.listarMapa()
       veiculosRef.current = lista
       setVeiculos(lista)
-      if (ready) syncMarkers(lista)
+      if (ready) {
+        syncMarkers(lista)
+        if (lista.length > 0) void fitMapToVeiculos(lista)
+      }
     } catch (err) {
       setErrorFrota(err instanceof Error ? err.message : "Erro ao carregar frota")
     } finally {
@@ -138,6 +177,26 @@ const Maps: React.FC = () => {
     let cancelled = false
 
     const setupRealtime = async () => {
+      if (useFirebaseDirect()) {
+        socketService.connectFirestoreRealtime()
+        socketService.subscribeAll()
+        setWsConnected(true)
+
+        const unsubPos = socketService.onPosicaoAtualizada(({ rastreadorId, posicao }) => {
+          applyPosicaoUpdate(rastreadorId, posicao)
+        })
+
+        const unsubEvt = socketService.onEventoNovo(({ rastreadorId, evento }) => {
+          const label = `${evento.eventoNome || evento.eventoId} — ${rastreadorId.slice(0, 8)}`
+          setEventosRecentes((prev) => [label, ...prev].slice(0, 8))
+        })
+
+        return () => {
+          unsubPos()
+          unsubEvt()
+        }
+      }
+
       const token = (await apiService.getAccessTokenAsync()) || apiService.getAccessToken()
       if (!token || cancelled) return
 
@@ -193,8 +252,8 @@ const Maps: React.FC = () => {
 
   const centerOn = (v: VeiculoFrota) => {
     const pos = v.posicaoAtual
-    if (!pos?.latitude || !pos?.longitude || !mapRef.current) return
-    mapRef.current.setCenter({ lat: pos.latitude, lng: pos.longitude })
+    if (!hasCoords(pos) || !mapRef.current) return
+    mapRef.current.setCenter({ lat: pos!.latitude!, lng: pos!.longitude! })
     mapRef.current.setZoom(15)
     setSelectedId(v.id)
   }

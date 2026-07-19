@@ -1,5 +1,11 @@
 import { Timestamp } from 'firebase/firestore';
 
+export function toNumber(value: unknown): number | undefined {
+  if (value == null || value === '') return undefined;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : undefined;
+}
+
 export function toIso(value: unknown): string {
   if (!value) return new Date().toISOString();
   if (typeof value === 'string') return value;
@@ -105,7 +111,7 @@ export function mapFirebaseAuthError(code: string): string {
 
 function mapFirestoreConfigError(message: string): string | null {
   if (/database ['"]?\(default\)['"]? not found/i.test(message)) {
-    return 'Firestore ainda não foi criado no projeto borderless-92b2c. No Firebase Console → Firestore → Create database → use o ID (default) → Production → southamerica-east1. Depois: npm run firebase:rules';
+    return 'Firestore ainda não foi criado no projeto borderless-92b2c. No Firebase Console → Firestore → Create database (ID default) → depois reinicie o app e rode npm run firebase:rules.';
   }
   if (/database ['"][^'"]+['"]? not found/i.test(message)) {
     return 'O banco Firestore configurado em VITE_FIRESTORE_DATABASE_ID não existe. Confira o ID no Firebase Console ou remova a variável para usar (default).';

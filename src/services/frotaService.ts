@@ -55,13 +55,7 @@ class FrotaService {
 
   async listarMapa(clienteId?: string): Promise<VeiculoFrota[]> {
     if (useFirebaseDirect()) {
-      const { veiculos } = await fb.listarVeiculosFrota({
-        clienteId,
-        status: 'ativa'
-      });
-      return veiculos.filter(
-        (v) => v.posicaoAtual?.latitude != null && v.posicaoAtual?.longitude != null
-      );
+      return fb.listarVeiculosMapa(clienteId);
     }
 
     const q = clienteId ? `?clienteId=${clienteId}` : '';

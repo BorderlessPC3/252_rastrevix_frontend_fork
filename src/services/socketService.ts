@@ -4,7 +4,7 @@ import type { DadosRastreador, EventoRastreador } from '../types';
 import { useFirebaseDirect } from '../config/firebase';
 import { getDb } from '../firebase/app';
 import { COLLECTIONS } from '../firebase/collections';
-import { docToRecord } from '../firebase/helpers';
+import { docToRecord, toNumber } from '../firebase/helpers';
 
 const WS_URL = import.meta.env.VITE_WS_URL || 'http://localhost:3001';
 
@@ -71,6 +71,39 @@ class SocketService {
     return this.socket;
   }
 
+  /** Firestore em tempo real (modo VITE_USE_FIREBASE=true). */
+  connectFirestoreRealtime(): void {
+    if (!useFirebaseDirect()) return;
+    this.startFirestoreListeners();
+  }
+
+  private normalizeDados(raw: Record<string, unknown>): DadosRastreador {
+    return {
+      id: String(raw.id),
+      rastreadorId: String(raw.rastreadorId ?? ''),
+      timestamp: String(raw.timestamp ?? new Date().toISOString()),
+      latitude: toNumber(raw.latitude),
+      longitude: toNumber(raw.longitude),
+      altitude: toNumber(raw.altitude),
+      velocidade: toNumber(raw.velocidade),
+      direcao: toNumber(raw.direcao),
+      satelites: toNumber(raw.satelites),
+      ignicao: raw.ignicao as boolean | undefined,
+      odometro: toNumber(raw.odometro),
+      horimetro: toNumber(raw.horimetro),
+      tensaoEntrada: toNumber(raw.tensaoEntrada),
+      tensaoBateria: toNumber(raw.tensaoBateria),
+      velocidadeCAN: toNumber(raw.velocidadeCAN),
+      rpm: toNumber(raw.rpm),
+      combustivel: toNumber(raw.combustivel),
+      temperatura: toNumber(raw.temperatura),
+      canAtivo: raw.canAtivo as boolean | undefined,
+      eventoId: toNumber(raw.eventoId),
+      eventoStatus: raw.eventoStatus as string | undefined,
+      eventoNome: raw.eventoNome as string | undefined
+    };
+  }
+
   private startFirestoreListeners(): void {
     this.stopFirestoreListeners();
 
@@ -81,9 +114,10 @@ class SocketService {
         snap.docChanges().forEach((change) => {
           if (change.type === 'removed') return;
           const raw = docToRecord(change.doc.id, change.doc.data() as Record<string, unknown>);
-          const dados = raw as unknown as DadosRastreador;
-          const rastreadorId = String(raw.rastreadorId ?? '');
+          const dados = this.normalizeDados(raw);
+          const rastreadorId = dados.rastreadorId;
           if (!rastreadorId) return;
+          if (dados.latitude == null || dados.longitude == null) return;
           if (this.filteredRastreadorId && this.filteredRastreadorId !== rastreadorId) return;
 
           const dedupeKey = `${rastreadorId}:${raw.timestamp}`;
@@ -125,7 +159,46 @@ class SocketService {
       })
     );
 
-    console.info('[Firestore] Listeners de tempo real ativos');
+    const rastreadoresQ = collection(getDb(), COLLECTIONS.rastreadores);
+
+    this.firestoreUnsubs.push(
+      onSnapshot(rastreadoresQ, (snap) => {
+        snap.docChanges().forEach((change) => {
+          if (change.type === 'removed') return;
+          const raw = docToRecord(change.doc.id, change.doc.data() as Record<string, unknown>);
+          const rastreadorId = String(raw.id ?? change.doc.id);
+          const lat = toNumber(raw.ultimaLatitude);
+          const lng = toNumber(raw.ultimaLongitude);
+          if (lat == null || lng == null) return;
+
+          const dados: DadosRastreador = {
+            id: `cache-${rastreadorId}`,
+            rastreadorId,
+            timestamp: String(raw.ultimaPosicaoGps ?? raw.ultimaComunicacao ?? new Date().toISOString()),
+            latitude: lat,
+            longitude: lng,
+            velocidade: toNumber(raw.ultimaVelocidade),
+            direcao: toNumber(raw.ultimaDirecao),
+            ignicao: raw.ultimaIgnicao as boolean | undefined
+          };
+
+          const dedupeKey = `${rastreadorId}:${dados.timestamp}:${lat}:${lng}`;
+          if (this.lastPosicaoByRastreador.get(rastreadorId) === dedupeKey) return;
+          this.lastPosicaoByRastreador.set(rastreadorId, dedupeKey);
+
+          const payload: PosicaoAtualizadaPayload = {
+            rastreadorId,
+            posicao: dados,
+            timestamp: dados.timestamp
+          };
+
+          this.dadosHandlers.forEach((h) => h({ rastreadorId, dados }));
+          this.posicaoHandlers.forEach((h) => h(payload));
+        });
+      })
+    );
+
+    console.info('[Firestore] Listeners de tempo real ativos (dados_rastreador + rastreadores)');
   }
 
   private stopFirestoreListeners(): void {

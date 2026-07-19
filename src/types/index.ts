@@ -143,6 +143,12 @@ export interface Rastreador {
     dataCadastro: string;
     ultimaAtualizacao: string;
     ultimaComunicacao?: string;
+    ultimaLatitude?: number;
+    ultimaLongitude?: number;
+    ultimaVelocidade?: number;
+    ultimaDirecao?: number;
+    ultimaIgnicao?: boolean;
+    ultimaPosicaoGps?: string;
 }
 
 export interface DadosRastreador {
